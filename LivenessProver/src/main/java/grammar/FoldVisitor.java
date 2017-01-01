@@ -15,9 +15,8 @@ public abstract class FoldVisitor<R,A> implements AllVisitor<R,A> {
       R r = leaf(arg);
       r = combine(p.automatonrule_1.accept(this, arg), r, arg);
       r = combine(p.maybeclosed_.accept(this, arg), r, arg);
+      r = combine(p.transducerrule_.accept(this, arg), r, arg);
       r = combine(p.automatonrule_2.accept(this, arg), r, arg);
-      r = combine(p.transducerrule_1.accept(this, arg), r, arg);
-      r = combine(p.transducerrule_2.accept(this, arg), r, arg);
       for (VerifierOption x : p.listverifieroption_) {
         r = combine(x.accept(this,arg), r, arg);
       }

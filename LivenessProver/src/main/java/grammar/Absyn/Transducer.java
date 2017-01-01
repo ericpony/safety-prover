@@ -4,7 +4,6 @@ public class Transducer extends TransducerRule {
   public final InitRule initrule_;
   public final ListTransitionRule listtransitionrule_;
   public final AcceptingRule acceptingrule_;
-
   public Transducer(InitRule p1, ListTransitionRule p2, AcceptingRule p3) { initrule_ = p1; listtransitionrule_ = p2; acceptingrule_ = p3; }
 
   public <R,A> R accept(grammar.Absyn.TransducerRule.Visitor<R,A> v, A arg) { return v.visit(this, arg); }

@@ -338,15 +338,13 @@ public class PrettyPrinter
     {
        grammar.Absyn.Model _model = (grammar.Absyn.Model) foo;
        if (_i_ > 0) render(_L_PAREN);
-       render("I0");
+       render("Initial");
        pp(_model.automatonrule_1, 0);
        pp(_model.maybeclosed_, 0);
-       render("F");
+       render("Transition");
+       pp(_model.transducerrule_, 0);
+       render("Bad");
        pp(_model.automatonrule_2, 0);
-       render("P1");
-       pp(_model.transducerrule_1, 0);
-       render("P2");
-       pp(_model.transducerrule_2, 0);
        pp(_model.listverifieroption_, 0);
        if (_i_ > 0) render(_R_PAREN);
     }
@@ -721,9 +719,8 @@ public class PrettyPrinter
        render("Model");
        sh(_model.automatonrule_1);
        sh(_model.maybeclosed_);
+       sh(_model.transducerrule_);
        sh(_model.automatonrule_2);
-       sh(_model.transducerrule_1);
-       sh(_model.transducerrule_2);
        render("[");
        sh(_model.listverifieroption_);
        render("]");

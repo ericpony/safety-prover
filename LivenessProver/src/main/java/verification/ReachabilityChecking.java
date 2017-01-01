@@ -1,37 +1,29 @@
 package verification;
 
-import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import common.Utility;
+import common.VerificationUltility;
+import common.bellmanford.DirectedEdge;
+import common.bellmanford.DirectedEdgeWithInputOutput;
+import common.bellmanford.EdgeWeightedDigraph;
+import common.finiteautomata.Automata;
+import common.finiteautomata.AutomataConverter;
+import elimination.CEElimination;
+import elimination.TransitivityPairSet;
+import encoding.*;
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.TimeoutException;
 
-import common.Ultility;
-import common.VerificationUltility;
-import common.bellmanford.EdgeWeightedDigraph;
-import common.bellmanford.DirectedEdge;
-import common.bellmanford.DirectedEdgeWithInputOutput;
-import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import java.io.FileNotFoundException;
+import java.util.*;
 
-import elimination.CEElimination;
-import elimination.WordAcceptance;
-import encoding.AutomataEncoding;
-import encoding.BoolValToAutomaton;
-import encoding.ISatSolver;
-import encoding.ISatSolverFactory;
-import encoding.TransducerEncoding;
-import encoding.RankingFunction;
-import elimination.TransitivityPairSet;
+class LOGGER {
+    public static void debug(Object msg) {
+        System.err.println(msg);
+    }
+}
 
 public class ReachabilityChecking {
-    private static final Logger LOGGER = LogManager.getLogger();
+    //private static final Logger LOGGER = LogManager.getLogger();
 
     private Map<String, Integer> labelToIndex = new HashMap<String, Integer>();
     /// directory name of the output
@@ -74,392 +66,219 @@ public class ReachabilityChecking {
     }
 
     public ReachabilityChecking(boolean lexOrder,
-				boolean closeUnderTransitions,
-				boolean checkI0Subset,
-				ISatSolverFactory solverFactory) {
-	solver = solverFactory.spawnSolver();
-	this.solverFactory = solverFactory;
-	this.lexicographicOrder = lexOrder;
-	this.closeUnderTransitions = closeUnderTransitions;
-	this.checkI0Subset = checkI0Subset;
-	this.ceElimination = new CEElimination(solver);
+                                boolean closeUnderTransitions,
+                                boolean checkI0Subset,
+                                ISatSolverFactory solverFactory) {
+        solver = solverFactory.spawnSolver();
+        this.solverFactory = solverFactory;
+        this.lexicographicOrder = lexOrder;
+        this.closeUnderTransitions = closeUnderTransitions;
+        this.checkI0Subset = checkI0Subset;
+        this.ceElimination = new CEElimination(solver);
     }
 
     public void setup() {
-	automataBEncoding =
-	    new AutomataEncoding(solver, automataNumStates, numLetters);
+        automataBEncoding = new AutomataEncoding(solver, automataNumStates, numLetters);
+        try {
+            LOGGER.debug("Encoding automaton");
+            automataBEncoding.encode();
+            if (lexicographicOrder) {
+                rankingFunctionEncoding = new RankingFunction(solver, transducerNumStates, numLetters);
+                LOGGER.debug("Encoding ranking function");
+                rankingFunctionEncoding.encode();
+            } else {
+                transducerEncoding = new TransducerEncoding(solver, transducerNumStates, numLetters);
+                transitivitySet = new TransitivityPairSet(transducerEncoding);
+                LOGGER.debug("Encoding transducer");
+                transducerEncoding.encode();
+            }
 
-	try {
-	    LOGGER.debug("Encoding automaton");
-	    automataBEncoding.encode();
+            updateWithOldCE();
 
-	    if (lexicographicOrder) {
-		rankingFunctionEncoding =
-		    new RankingFunction(solver, transducerNumStates, numLetters);
-		LOGGER.debug("Encoding ranking function");
-		rankingFunctionEncoding.encode();
-	    } else {
-		transducerEncoding =
-		    new TransducerEncoding(solver, transducerNumStates, numLetters);
-		transitivitySet =
-		    new TransitivityPairSet(transducerEncoding);
-		LOGGER.debug("Encoding transducer");
-		transducerEncoding.encode();
-	    }
-
-	    updateWithOldCE();
-
-	} catch (ContradictionException e) {
-	    // nothing
-	} catch (TimeoutException e) {
-	    throw new RuntimeException("timeout");
-	}
+        } catch (ContradictionException e) {
+            // nothing
+        } catch (TimeoutException e) {
+            throw new RuntimeException("timeout");
+        }
     }
 
     private Automata automatonB = null;
 
     public Automata getAutomatonB() {
-	return automatonB;
+        return automatonB;
     }
 
     private EdgeWeightedDigraph transducer = null;
 
     public EdgeWeightedDigraph getTransducer() {
-	return transducer;
+        return transducer;
     }
 
     public boolean findNextSolution(boolean printResult) {
-		boolean unsat = true;
-		boolean success = false;
+        boolean unsat = true;
+        boolean success = false;
 
-		try {
-	    solverLoop: while (solver.isSatisfiable()) {
-			round += 1;
-			LOGGER.debug("Satisfiable, round " + round + ", clause num " +
-				     solver.getClauseNum());
+        try {
+            solverLoop:
+            while (solver.isSatisfiable()) {
+                round += 1;
+                LOGGER.debug("Satisfiable, round " + round + ", clause num " + solver.getClauseNum());
 
-                        if (stopped) {
-                            LOGGER.debug("stopped");
-                            return false;
-                        }
+                if (stopped) {
+                    LOGGER.debug("stopped");
+                    return false;
+                }
 
-			unsat = false;
-			Set<Integer> modelPosVars = solver.positiveModelVars();
+                unsat = false;
+                Set<Integer> modelPosVars = solver.positiveModelVars();
 
-			automatonB = BoolValToAutomaton.toAutomata(modelPosVars, automataBEncoding);
-			assert(automatonB.isDFA());
-			LOGGER.debug("Find Automaton B ");
-			LOGGER.debug(automatonB);
+                automatonB = BoolValToAutomaton.toAutomata(modelPosVars, automataBEncoding);
+                assert (automatonB.isDFA());
+                LOGGER.debug("Guess an invariant:");
+                LOGGER.debug(automatonB);
 
-			EdgeWeightedDigraph rankingFunction = null;
+                ////////////////////////////////////////////////////////
+                if (checkI0Subset) {
+                    SubsetChecking l0 = new SubsetChecking(I0, automatonB);
+                    List<Integer> w = l0.check();
+                    if (w != null) {
+                        LOGGER.debug("Invariant does't contain all initial configurations! Counterexample:");
+                        LOGGER.debug(w);
+                        ceElimination.ce0Elimination(automataBEncoding, w);
+                        oldCounterExamples.addL0B(w);
+                        continue;
+                    }
+                }
+                ////////////////////////////////////////////////////////
+                if (closeUnderTransitions) {
+                    Automata aut = automatonB;
+                    Automata complementF = AutomataConverter.getComplement(F);
+                    InductivenessChecking l1 = new InductivenessChecking(aut, complementF, player2, numLetters);
+                    List<List<Integer>> xy = l1.check();
+                    if (xy != null) {
+                        LOGGER.debug("Invariant is not inductive! Counterexample:");
+                        LOGGER.debug(xy);
+                        ceElimination.ce1Elimination(automataBEncoding, xy);
+                        oldCounterExamples.addL1(xy);
+                        continue;
+                    }
+                }
+                ////////////////////////////////////////////////////////
+                // Check if invariant and bad states are disjoint
+                Automata inter = VerificationUltility.getIntersection(automatonB, F);
+                List<Integer> cex = AutomataConverter.getSomeShortestWord(inter);
+//                List<Integer> cex = new SubsetChecking(F, AutomataConverter.getComplement(automatonB)).check();
+                if (cex != null) {
+                    if (cex.size() == 0) cex.add(Automata.EPSILON_LABEL);
+                    LOGGER.debug("Invariant contain bad configurations! Counterexample:");
+                    LOGGER.debug(cex);
+                    solver.addClause(new int[]{-automataBEncoding.acceptWord(cex)});
+                    continue;
+                }
 
-			if (!lexicographicOrder) {
-			    transducer = BoolValToAutomaton.toTransducer(modelPosVars, transducerEncoding);
-                        //			assert(VerificationUltility.isComplete(transducer, numLetters));
-			    LOGGER.debug("Find Transducer ");
-			    LOGGER.debug(transducer);
-			} else {
-                transducer = null;
-			    rankingFunction =
-				BoolValToAutomaton.toTransducer(modelPosVars,
-								rankingFunctionEncoding);
-			    LOGGER.debug("Find RF ");
-			    LOGGER.debug(rankingFunction);
-			}
+                // otherwise we are finished!
+                success = true;
+                if (printResult) {
+                    Map<Integer, String> indexToLabel = new HashMap<Integer, String>();
+                    for (Map.Entry<String, Integer> entry : labelToIndex.entrySet())
+                        indexToLabel.put(entry.getValue(), entry.getKey());
 
-			////////////////////////////////////////////////////////
-			// L3 local
+                    System.out.println("VERDICT: Bad configurations are not reachable from every " +
+                            (closeUnderTransitions ? "reachable" : "initial") + " configuration.");
+                    System.out.println();
+                    System.out.println("// Configurations visited in the game");
+                    System.out.println(automatonB.prettyPrint("B", indexToLabel));
 
-			if (!lexicographicOrder) {
-			    List<List<List<Integer>>> l3LocalCexes =
-				transitivitySet.transitivityCEXes(modelPosVars);
+                    if (systemInvariant != null) {
+                        System.out.println("// System invariant");
+                        System.out.println(systemInvariant.prettyPrint("I", indexToLabel));
+                    }
+                    //write to dot
+//                  writeToDot(automatonB, transducer);
+                }
+                break;
+            }
+        } catch (ContradictionException e) {
+            // nothing
+            LOGGER.debug(e);
+        } catch (TimeoutException e) {
+            LOGGER.debug(e);
+            throw new RuntimeException("timeout");
+        }
 
-			    if (!l3LocalCexes.isEmpty()) {
-				LOGGER.debug("L3-local failed!");
-				LOGGER.debug(l3LocalCexes);
+        if (success) {
+            return true;
+        } else {
+            LOGGER.debug("No more models exist.");
+        }
+        if (unsat) LOGGER.debug("Unsatisfiable!");
 
-				for (List<List<Integer>> cex : l3LocalCexes) {
-				    ceElimination.ce3Elimination(transducerEncoding,
-								 transitivitySet,
-								 cex);
-				    oldCounterExamples.addTransitivityCE(cex);
-				}
-
-				continue;
-			    }
-			}
-
-			////////////////////////////////////////////////////////
-			// L5: ranking function is functionally consistent
-
-                        // this test should not actually be necessary
-			if (lexicographicOrder) {
-			    FunctionalConsistencyChecking l5 =
-				new FunctionalConsistencyChecking();
-			    List<List<Integer>> counterExample = l5.check(rankingFunction);
-			    if (counterExample != null) {
-				LOGGER.debug("L5 failed!");
-				LOGGER.debug(counterExample);
-
-				ceElimination.ce5Elimination(rankingFunctionEncoding,
-							     counterExample);
-
-				continue;
-			    }
-
-			    transducer = BoolValToAutomaton.buildLexOrder(rankingFunction);
-
-//			    LOGGER.debug("Find lexicographic transducer ");
-//			    LOGGER.debug(transducer);
-			}
-
-			////////////////////////////////////////////////////////
-			// L4
-
-			boolean contL4 = true;
-			while (contL4) {
-			    contL4 = false;
-
-			    ProgressChecking l4 =
-				new ProgressChecking(automatonB, F, winningStates,
-						     (systemInvariant != null) ?
-						     systemInvariant :
-						     VerificationUltility
-						     .getUniversalAutomaton(numLetters),
-						     player1, player2,
-						     transducer, numLetters);
-			    List<List<Integer>> counterExample = l4.check();
-			    if(counterExample != null){
-				LOGGER.debug("L4 failed!");
-				LOGGER.debug(counterExample);
-
-				final List<Integer> x = counterExample.get(0);
-
-				if (systemInvariant != null &&
-				    !finiteStates.isReachable(x)) {
-				    LOGGER.debug("" + x + " is not reachable, eliminating ...");
-				    strengthenSystemInvariant(x);
-				    contL4 = true;
-				} else {
-				    ceElimination.ce4Elimination(automataBEncoding,
-								 transducerEncoding,
-								 transitivitySet,
-								 rankingFunctionEncoding,
-								 counterExample,
-								 winningStates, player2);
-				    oldCounterExamples.addProgressCE(counterExample);
-				    continue solverLoop;
-				}
-			    }
-			}
-
-			////////////////////////////////////////////////////////
-			// L0
-
-			if (checkI0Subset) {
-			    SubsetChecking l0 = new SubsetChecking(I0, automatonB);
-			    List<Integer> w = l0.check();
-			    if(w != null){
-				LOGGER.debug("L0 failed!");
-				LOGGER.debug(w);
-				ceElimination.ce0Elimination(automataBEncoding, w);
-				oldCounterExamples.addL0B(w);
-				continue;
-			    }
-			}
-
-			////////////////////////////////////////////////////////
-			// L3
-
-			if (!lexicographicOrder) {
-			    TransitivitiyChecking l3 =
-				new TransitivitiyChecking(transducer, numLetters);
-			    List<List<Integer>> counterExamples = l3.check();
-			    if(counterExamples != null){
-				LOGGER.debug("L3 failed!");
-				LOGGER.debug(counterExamples);
-				ceElimination.ce3Elimination(transducerEncoding,
-							     transitivitySet,
-							     counterExamples);
-
-				oldCounterExamples.addTransitivityCE(counterExamples);
-				continue;
-			    }
-			}
-
-			////////////////////////////////////////////////////////
-			// L1
-
-			if (closeUnderTransitions) {
-			    Automata aut;
-			    Automata complementF = AutomataConverter.getComplement(F);
-			    AutomataEncoding enc;
-
-			    aut = automatonB;
-			    enc = automataBEncoding;
-
-			    InductivenessChecking l1 =
-				new InductivenessChecking(aut, complementF,
-							  player1, numLetters);
-			    List<List<Integer>> xy = l1.check();
-			    if(xy != null){
-				LOGGER.debug("L1 failed for P1!");
-				LOGGER.debug(xy);
-				ceElimination.ce1Elimination(enc, xy);
-				oldCounterExamples.addL1(xy);
-				continue;
-			    }
-
-			    l1 = new InductivenessChecking(aut, complementF,
-							   player2, numLetters);
-			    xy = l1.check();
-			    if(xy != null){
-				LOGGER.debug("L1 failed for P2!");
-				LOGGER.debug(xy);
-				ceElimination.ce1Elimination(enc, xy);
-				oldCounterExamples.addL1(xy);
-				continue;
-			    }
-			}
-
-			////////////////////////////////////////////////////////
-
-			// otherwise we are finished!
-			success = true;
-
-			if (printResult) {
-                            Map<Integer, String> indexToLabel = new HashMap<Integer, String> ();
-                            for (Map.Entry<String, Integer> entry : labelToIndex.entrySet())
-                                indexToLabel.put(entry.getValue(), entry.getKey());
-        
-                            System.out.println
-                                ("VERDICT: Player 2 can win from every " +
-                                 (closeUnderTransitions ?
-                                  "reachable" :
-                                  "initial") +
-                                 " configuration");
-                            System.out.println();
-
-                            System.out.println
-                                ("// Configurations visited in the game");
-                            System.out.println
-                                (automatonB.prettyPrint("B", indexToLabel));
-
-                            if (rankingFunction != null) {
-                                System.out.println("// Ranking function");
-                                Map<Integer, String> idMap = new HashMap<Integer, String> ();
-                                for (int i = 0; i < numLetters; ++i)
-                                    idMap.put(i, "" + i);
-                                System.out.println(rankingFunction.prettyPrint("RF", indexToLabel, idMap));
-                            }
-
-                            if (systemInvariant != null) {
-                                System.out.println("// System invariant");
-                                System.out.println(systemInvariant.prettyPrint("I", indexToLabel));
-                            }
-
-                            System.out.println("// Progress relation <" +
-                                               ((rankingFunction != null) ? " induced by the ranking function" : ""));
-                            System.out.println(transducer.prettyPrint("T", indexToLabel, indexToLabel));
-
-                            //write to dot
-                            writeToDot(automatonB, transducer);
-			}
-
-			break;
-		}
-		} catch (ContradictionException e) {
-		    // nothing
-		} catch (TimeoutException e) {
-		    throw new RuntimeException("timeout");
-		}
-
-		//
-		if (success) {
-			return true;
-		}
-
-		if (!success) {
-			LOGGER.debug("No more models exist.");
-		}
-
-		if (unsat) {
-			LOGGER.debug("Unsatisfiable!");
-		}
-		return false;
-	}
+        return false;
+    }
 
     private void strengthenSystemInvariant(List<Integer> x) {
-	OldCounterExamples oldCEs = new OldCounterExamples();
-	Automata newInv = null;
-	Automata knownInv =
-	    VerificationUltility.getIntersection(systemInvariant,
-						 AutomataConverter.getComplement(F));
-	for (int num = 1; num < 20 && newInv == null; ++num) {
-	    RelativeInvariantSynth invSynth =
-		new RelativeInvariantSynth(solverFactory,
-					   numLetters,
-					   I0, knownInv,
-					   player1, player2,
-					   x, oldCEs, num);
-	    newInv = invSynth.infer();
-	}
+        OldCounterExamples oldCEs = new OldCounterExamples();
+        Automata newInv = null;
+        Automata knownInv = VerificationUltility.getIntersection(systemInvariant, AutomataConverter.getComplement(F));
 
-	systemInvariant =
-	    VerificationUltility.getIntersection(systemInvariant, newInv);
+        for (int num = 1; num < 20 && newInv == null; ++num) {
+            RelativeInvariantSynth invSynth = new RelativeInvariantSynth
+                    (solverFactory, numLetters, I0, knownInv, player1, player2, x, oldCEs, num);
+            newInv = invSynth.infer();
+        }
 
-	assert(systemInvariant.isDFA());
+        systemInvariant = VerificationUltility.getIntersection(systemInvariant, newInv);
 
-	if(!systemInvariant.isCompleteDFA()){
-	    systemInvariant =
-		AutomataConverter.toCompleteDFA(systemInvariant);
-	}
+        assert (systemInvariant.isDFA());
 
-	systemInvariant =
-	    AutomataConverter.toMinimalDFA(systemInvariant);
+        if (!systemInvariant.isCompleteDFA()) {
+            systemInvariant = AutomataConverter.toCompleteDFA(systemInvariant);
+        }
 
-	LOGGER.debug("new system invariant is " + systemInvariant);
+        systemInvariant = AutomataConverter.toMinimalDFA(systemInvariant);
+
+        LOGGER.debug("new system invariant is " + systemInvariant);
     }
 
     public void addBMembershipConstraint(List<Integer> word) {
-	try {
-	    ceElimination.ce0Elimination(automataBEncoding, word);
-	    oldCounterExamples.addL0B(word);
-	} catch (ContradictionException e) {
-	    // nothing
-	}
+        try {
+            ceElimination.ce0Elimination(automataBEncoding, word);
+            oldCounterExamples.addL0B(word);
+        } catch (ContradictionException e) {
+            // nothing
+        }
     }
 
     public void addBNonMembershipConstraint(List<Integer> word) {
-	try {
-            solver.addClause(new int[] { -automataBEncoding.acceptWord(word) });
-	} catch (ContradictionException e) {
-	    // nothing
-	}
+        try {
+            solver.addClause(new int[]{-automataBEncoding.acceptWord(word)});
+        } catch (ContradictionException e) {
+            // nothing
+        }
     }
 
     public void addDisjBMembershipConstraint(List<List<Integer>> words) {
-	try {
-	    int[] clause = new int[words.size()];
+        try {
+            int[] clause = new int[words.size()];
 
-	    for (int i = 0; i < words.size(); ++i) {
-		//		WordAcceptance wordAcceptance =
-		//		    new WordAcceptance(automataBEncoding);
-		//		clause[i] = wordAcceptance.encode(words.get(i));
-		clause[i] = automataBEncoding.acceptWord(words.get(i));
-	    }
+            for (int i = 0; i < words.size(); ++i) {
+                //		WordAcceptance wordAcceptance =
+                //		    new WordAcceptance(automataBEncoding);
+                //		clause[i] = wordAcceptance.encode(words.get(i));
+                clause[i] = automataBEncoding.acceptWord(words.get(i));
+            }
 
-	    solver.addClause(clause);
+            solver.addClause(clause);
 
-	} catch (ContradictionException e) {
-	    // nothing
-	}
+        } catch (ContradictionException e) {
+            // nothing
+        }
     }
 
     public void fixTransducer(EdgeWeightedDigraph relation) {
-        assert(!lexicographicOrder);
-        assert(relation.V() == transducerNumStates);
-        assert(relation.getInitState() == 0);
+        assert (!lexicographicOrder);
+        assert (relation.V() == transducerNumStates);
+        assert (relation.getInitState() == 0);
 
         try {
             for (int s1 = 1; s1 <= transducerNumStates; ++s1)
@@ -471,35 +290,35 @@ public class ReachabilityChecking {
                             boolean found = false;
                             for (DirectedEdge edge : relation.adj(s1 - 1)) {
                                 DirectedEdgeWithInputOutput ioEdge =
-                                    (DirectedEdgeWithInputOutput)edge;
+                                        (DirectedEdgeWithInputOutput) edge;
                                 if (ioEdge.to() == s2 - 1 &&
-                                    ioEdge.getInput() == l1 &&
-                                    ioEdge.getOutput() == l2)
+                                        ioEdge.getInput() == l1 &&
+                                        ioEdge.getOutput() == l2)
                                     found = true;
                             }
 
-                            solver.addClause(new int[] { (found ? 1 : -1) *
-                                                         transducerEncoding.getTransBoolVar
-                                                         (s1, l1, l2, s2) });
+                            solver.addClause(new int[]{(found ? 1 : -1) *
+                                    transducerEncoding.getTransBoolVar
+                                            (s1, l1, l2, s2)});
                         }
 
             final Set<Integer> accepting = relation.getAcceptingStates();
             for (int s = 1; s <= transducerNumStates; ++s) {
                 boolean a = accepting.contains(s - 1);
-                solver.addClause(new int[] { (a ? 1 : -1) *
-                                             transducerEncoding.getIndexZVar(s) });
+                solver.addClause(new int[]{(a ? 1 : -1) *
+                        transducerEncoding.getIndexZVar(s)});
             }
-	} catch (ContradictionException e) {
-	    // nothing
-	}
+        } catch (ContradictionException e) {
+            // nothing
+        }
     }
 
     public void assertLargerTransducer(EdgeWeightedDigraph relation) {
-        assert(!lexicographicOrder);
-        assert(relation.V() == transducerNumStates);
-        assert(relation.getInitState() == 0);
+        assert (!lexicographicOrder);
+        assert (relation.V() == transducerNumStates);
+        assert (relation.getInitState() == 0);
 
-	List<Integer> unsetVariables = new ArrayList<Integer> ();
+        List<Integer> unsetVariables = new ArrayList<Integer>();
 
         try {
             for (int s1 = 1; s1 <= transducerNumStates; ++s1)
@@ -511,162 +330,153 @@ public class ReachabilityChecking {
                             boolean found = false;
                             for (DirectedEdge edge : relation.adj(s1 - 1)) {
                                 DirectedEdgeWithInputOutput ioEdge =
-                                    (DirectedEdgeWithInputOutput)edge;
+                                        (DirectedEdgeWithInputOutput) edge;
                                 if (ioEdge.to() == s2 - 1 &&
-                                    ioEdge.getInput() == l1 &&
-                                    ioEdge.getOutput() == l2)
+                                        ioEdge.getInput() == l1 &&
+                                        ioEdge.getOutput() == l2)
                                     found = true;
                             }
 
-			    final int var =
-				transducerEncoding.getTransBoolVar(s1, l1, l2, s2);
+                            final int var =
+                                    transducerEncoding.getTransBoolVar(s1, l1, l2, s2);
 
-			    if (found)
-				solver.addClause(new int[] { var });
-			    else
-				unsetVariables.add(var);
+                            if (found)
+                                solver.addClause(new int[]{var});
+                            else
+                                unsetVariables.add(var);
                         }
 
             final Set<Integer> accepting = relation.getAcceptingStates();
             for (int s = 1; s <= transducerNumStates; ++s) {
                 boolean a = accepting.contains(s - 1);
-		final int var = transducerEncoding.getIndexZVar(s);
-		if (a)
-		    solver.addClause(new int[] { var });
-		else
-		    unsetVariables.add(var);
+                final int var = transducerEncoding.getIndexZVar(s);
+                if (a)
+                    solver.addClause(new int[]{var});
+                else
+                    unsetVariables.add(var);
             }
 
-	    if (!unsetVariables.isEmpty()) {
-		int[] clause = new int [unsetVariables.size()];
-		for (int i = 0; i < clause.length; ++i)
-		    clause[i] = unsetVariables.get(i);
-		solver.addClause(clause);
-	    }
-	} catch (ContradictionException e) {
-	    // nothing
-	}
+            if (!unsetVariables.isEmpty()) {
+                int[] clause = new int[unsetVariables.size()];
+                for (int i = 0; i < clause.length; ++i)
+                    clause[i] = unsetVariables.get(i);
+                solver.addClause(clause);
+            }
+        } catch (ContradictionException e) {
+            // nothing
+        }
     }
 
-	private void updateWithOldCE()
-			throws ContradictionException {
-		//update old counter example
+    private void updateWithOldCE()
+            throws ContradictionException {
+        //update old counter example
 
-		LOGGER.debug("Updating encoding with old counter examples...");
-		for(List<List<Integer>> ce: oldCounterExamples.getProgressCEs()){
-			ceElimination.ce4Elimination(automataBEncoding, transducerEncoding,
-						     transitivitySet, rankingFunctionEncoding,
-						     ce, winningStates, player2);
-		}
+        LOGGER.debug("Updating encoding with old counter examples...");
+        for (List<List<Integer>> ce : oldCounterExamples.getProgressCEs()) {
+            ceElimination.ce4Elimination(automataBEncoding, transducerEncoding,
+                    transitivitySet, rankingFunctionEncoding, ce, winningStates, player2);
+        }
 
-		for(List<List<Integer>> ce: oldCounterExamples.getTransitivityCEs()){
-		    ceElimination.ce3Elimination(transducerEncoding, transitivitySet, ce);
-		}
+        for (List<List<Integer>> ce : oldCounterExamples.getTransitivityCEs()) {
+            ceElimination.ce3Elimination(transducerEncoding, transitivitySet, ce);
+        }
 
-		for(List<Integer> ce: oldCounterExamples.getL0B()){
-			ceElimination.ce0Elimination(automataBEncoding, ce);
-		}
+        for (List<Integer> ce : oldCounterExamples.getL0B()) {
+            ceElimination.ce0Elimination(automataBEncoding, ce);
+        }
 
-		for(List<List<Integer>> ce: oldCounterExamples.getL1()){
-			ceElimination.ce1Elimination(automataBEncoding, ce);
-		}
-	}
+        for (List<List<Integer>> ce : oldCounterExamples.getL1()) {
+            ceElimination.ce1Elimination(automataBEncoding, ce);
+        }
+    }
 
-	private void writeToDot(Automata automatonB,
-			EdgeWeightedDigraph transducer) {
-		try {
-			Ultility.writeOut(Ultility.toDot(automatonB, labelToIndex),
-				OUTPUT_DIR + "/automatonB.dot");
-			Ultility.writeOut(Ultility.toDot(transducer, labelToIndex),
-				OUTPUT_DIR + "/transducerOrder.dot");
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+    private void writeToDot(Automata automatonB,
+                            EdgeWeightedDigraph transducer) {
+        try {
+            Utility.writeOut(Utility.toDot(automatonB, labelToIndex),
+                    OUTPUT_DIR + "/automatonB.dot");
+            Utility.writeOut(Utility.toDot(transducer, labelToIndex),
+                    OUTPUT_DIR + "/transducerOrder.dot");
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
-	public int getTransducerNumStates() {
-		return transducerNumStates;
-	}
+    public int getTransducerNumStates() {
+        return transducerNumStates;
+    }
 
-	public void setTransducerNumStates(int transducerNumStates) {
-		this.transducerNumStates = transducerNumStates;
-	}
+    public void setTransducerNumStates(int transducerNumStates) {
+        this.transducerNumStates = transducerNumStates;
+    }
 
-	public int getNumLetters() {
-		return numLetters;
-	}
+    public int getNumLetters() {
+        return numLetters;
+    }
 
-	public void setNumLetters(int numLetters) {
-		this.numLetters = numLetters;
-	}
+    public void setNumLetters(int numLetters) {
+        this.numLetters = numLetters;
+    }
 
-	public int getAutomataNumStates() {
-		return automataNumStates;
-	}
+    public int getAutomataNumStates() {
+        return automataNumStates;
+    }
 
-	public void setAutomataNumStates(int automataNumStates) {
-		this.automataNumStates = automataNumStates;
-	}
+    public void setAutomataNumStates(int automataNumStates) {
+        this.automataNumStates = automataNumStates;
+    }
 
-	public Automata getI0() {
-		return I0;
-	}
+    public Automata getI0() {
+        return I0;
+    }
 
-	public void setI0(Automata i0) {
-		I0 = i0;
-	}
+    public void setI0(Automata i0) {
+        I0 = i0;
+    }
 
-	public Automata getF() {
-		return F;
-	}
+    public Automata getF() {
+        return F;
+    }
 
-	public void setF(Automata f) {
-		F = f;
-	}
+    public void setF(Automata f) {
+        F = f;
+    }
 
-	public void setWinningStates(Automata f) {
-		winningStates = f;
-	}
+    public void setWinningStates(Automata f) {
+        winningStates = f;
+    }
 
-	public EdgeWeightedDigraph getPlayer1() {
-		return player1;
-	}
+    public EdgeWeightedDigraph getPlayer2() {
+        return player2;
+    }
 
-	public void setPlayer1(EdgeWeightedDigraph player1) {
-		this.player1 = player1;
-	}
+    public void setPlayer2(EdgeWeightedDigraph player2) {
+        this.player2 = player2;
+    }
 
-	public EdgeWeightedDigraph getPlayer2() {
-		return player2;
-	}
+    public Map<String, Integer> getLabelToIndex() {
+        return labelToIndex;
+    }
 
-	public void setPlayer2(EdgeWeightedDigraph player2) {
-		this.player2 = player2;
-	}
+    public void setLabelToIndex(Map<String, Integer> labelToIndex) {
+        this.labelToIndex = labelToIndex;
+    }
 
-	public Map<String, Integer> getLabelToIndex() {
-		return labelToIndex;
-	}
-
-	public void setLabelToIndex(Map<String, Integer> labelToIndex) {
-		this.labelToIndex = labelToIndex;
-	}
-
-	public void setOldCounterExamples(OldCounterExamples oldCounterExamples) {
-		this.oldCounterExamples = oldCounterExamples;
-	}
+    public void setOldCounterExamples(OldCounterExamples oldCounterExamples) {
+        this.oldCounterExamples = oldCounterExamples;
+    }
 
     public void setFiniteStateSets(FiniteStateSets finiteStates) {
-	this.finiteStates = finiteStates;
+        this.finiteStates = finiteStates;
     }
 
     public Automata getSystemInvariant() {
-	return systemInvariant;
+        return systemInvariant;
     }
 
     public void setSystemInvariant(Automata inv) {
-	systemInvariant = inv;
+        systemInvariant = inv;
     }
 
 }

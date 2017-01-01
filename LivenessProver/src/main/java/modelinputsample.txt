@@ -1,51 +1,70 @@
+/**
+ * The finite automaton defining initial configurations.
+ *
+ * Here, letter "N" represents processes without token, and
+ * "T" processes with token. Initial configurations are words
+ * with at least one token.
+ */
+Initial {
+    init: s0;      // initial state of the automaton
 
-I0{
-	init: 1;
-	
-	1 -> 1 false;
-	1 -> 1 true;
-	1 -> 2 true;
-	2 -> 2 false;
-	2 -> 2 true;
-	accepting: 2;
+    s0 -> s0 N;    // transition labelled with letter "N"
+
+    s0 -> s1 T;
+
+    s1 -> s1 N;
+    s1 -> s1 T;
+
+    accepting: s1; // comma-separated list of accepting states
 }
 
-F{ 
-	init: 1;
-	
-	1 -> 1 false;
-	1 -> 2 true;
-	2 -> 2 false;
-	accepting: 2;
+/**
+ * The following flag specifies that the set I0 of initial configurations
+ * has to be closed under Player 1 and Player 2 transitions. This is
+ * necessary when analysing liveness for randomised systems.
+ */
+closedUnderTransitions;
+
+/**
+ * The length-preserving transducer defining Player 2 transitions.
+ *
+ * Here, Player 2 has to implement the possible transitions of the
+ * process selected by the scheduler (Player 1).
+ */
+Transition {
+    init: s0;
+
+    s0 -> s0 N/N;
+    s0 -> s0 T/T;
+
+    s0 -> s1 T/T;          // (1) selected process keeps token
+    s0 -> s2 T/N;          // (2) selected process passes token to right
+
+    // Merge tokens
+    s2 -> s1 T/T;           // merge tokens
+    s2 -> s1 N/T;           // pass token to right from s2
+
+    s1 -> s1 N/N;
+    s1 -> s1 T/T;
+
+    accepting: s1;
 }
 
-P1{
-	init: 1;
-	loop: 1, 2;
-	
-	1 -> 2 true/truecap;
-	accepting: 2;
+Bad {
+    init: s0;
+    s0 -> s1 N;
+    s1 -> s1 N;
+    accepting: s1;
 }
 
-P2{
-	init: 1;
-	loop: 2, 4, 6, 8;
-	
-	1 -> 2;
-	2 -> 3 truecap/false;
-	3 -> 4 false/true;
-	3 -> 4 true/true;
-	2 -> 5 false/true;
-	2 -> 5 true/true;
-	5 -> 4 truecap/false;
-	1 -> 6 false/true;
-	1 -> 6 true/true;
-	6 -> 7 truecap/false;
-	1 -> 8 truecap/false;
-	8 -> 7 false/true;
-	8 -> 7 true/true;
-	accepting: 4, 7;
-}
+/**
+ * Lower/Upper bound (inclusive) on the number of states considered for the
+ * progress relations T
+ */
+transducerStateGuessing: 1 .. 10;
 
-transducerStateGuessing: 2..3;
-automatonStateGuessing: 4..5;
+/**
+ * Lower/Upper bound (inclusive) on the number of states considered for the regular sets A, B of
+ * configurations
+ */
+automatonStateGuessing: 0 .. 4;

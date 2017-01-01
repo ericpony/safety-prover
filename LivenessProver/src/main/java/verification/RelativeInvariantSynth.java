@@ -1,9 +1,6 @@
 package verification;
 
-import java.io.FileNotFoundException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -11,20 +8,14 @@ import org.apache.logging.log4j.Logger;
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.TimeoutException;
 
-import common.Ultility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
 
 import elimination.CEElimination;
-import elimination.WordAcceptance;
 import encoding.AutomataEncoding;
 import encoding.BoolValToAutomaton;
 import encoding.ISatSolver;
 import encoding.ISatSolverFactory;
-import encoding.TransducerEncoding;
-import encoding.RankingFunction;
-import elimination.TransitivityPairSet;
 
 public class RelativeInvariantSynth {
     private static final Logger LOGGER = LogManager.getLogger();

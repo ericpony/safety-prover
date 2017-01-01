@@ -4,7 +4,6 @@ public class Automaton extends AutomatonRule {
   public final AutomataInitRule automatainitrule_;
   public final ListAutomataTransitionRule listautomatatransitionrule_;
   public final AutomataAcceptingsRule automataacceptingsrule_;
-
   public Automaton(AutomataInitRule p1, ListAutomataTransitionRule p2, AutomataAcceptingsRule p3) { automatainitrule_ = p1; listautomatatransitionrule_ = p2; automataacceptingsrule_ = p3; }
 
   public <R,A> R accept(grammar.Absyn.AutomatonRule.Visitor<R,A> v, A arg) { return v.visit(this, arg); }
