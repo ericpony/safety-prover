@@ -5,6 +5,7 @@ import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.lstar.LStar;
 import encoding.ISatSolverFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -124,18 +125,14 @@ public class IncrementalVerifier {
                 problem.getMaxNumOfStatesAutomaton() * problem.getMaxNumOfStatesAutomaton();
 
         finiteStates = new FiniteStateSets(problem.getNumberOfLetters(),
-                problem.getI0(), problem.getF(),
-                problem.getPlayer2(),
+                problem.getI(), problem.getF(), problem.getT(),
                 problem.getLabelToIndex());
 
         if (preComputeReachable) {
-            final LStarInvariantSynth lstarInvSynth =
-                    new LStarInvariantSynth(problem.getNumberOfLetters(),
-                            problem.getI0(), problem.getF(),
-                            problem.getPlayer1(),
-                            problem.getPlayer2(),
-                            finiteStates, 5);
-            systemInvariant = lstarInvSynth.infer();
+            Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
+                    problem.getI(), problem.getF(), problem.getT(),
+                    finiteStates, 5);
+            systemInvariant = LStar.inferWith(teacher);
         } else {
             systemInvariant = VerificationUltility.getUniversalAutomaton(problem.getNumberOfLetters());
         }
@@ -575,10 +572,10 @@ public class IncrementalVerifier {
         checking.setAutomataNumStates(numStateAutomata);
         checking.setF(problem.getF());
         checking.setWinningStates(winningStates);
-        checking.setI0(problem.getI0());
+        checking.setI0(problem.getI());
         checking.setNumLetters(problem.getNumberOfLetters());
 //        checking.setPlayer1(problem.getPlayer1());
-        checking.setPlayer2(problem.getPlayer2());
+        checking.setPlayer2(problem.getT());
         checking.setLabelToIndex(problem.getLabelToIndex());
         checking.setOldCounterExamples(oldCEs);
         checking.setFiniteStateSets(finiteStates);
@@ -655,9 +652,9 @@ public class IncrementalVerifier {
                     RelativeInvariantSynth invSynth =
                             new RelativeInvariantSynth(SOLVER_FACTORY,
                                     problem.getNumberOfLetters(),
-                                    problem.getI0(), knownInv,
+                                    problem.getI(), knownInv,
                                     problem.getPlayer1(),
-                                    problem.getPlayer2(),
+                                    problem.getT(),
                                     cex, oldCEs, num);
                     newInv = invSynth.infer();
                 }
@@ -688,7 +685,7 @@ public class IncrementalVerifier {
     // game, for configurations of length len
     private void verifyResults(int len) {
         final EdgeWeightedDigraph player1 = problem.getPlayer1();
-        final EdgeWeightedDigraph player2 = problem.getPlayer2();
+        final EdgeWeightedDigraph player2 = problem.getT();
         final int numLetters = problem.getNumberOfLetters();
 
         final Set<List<Integer>> p2winning =

@@ -16,7 +16,7 @@ public class FiniteStateSets {
     private Map<String, Integer> labelToIndex;
     private Map<Integer, String> indexToLabel;
 
-    private Automata I0;
+    private Automata I;
     private Automata F;
     private EdgeWeightedDigraph player1;
     private EdgeWeightedDigraph player2;
@@ -40,7 +40,7 @@ public class FiniteStateSets {
                            EdgeWeightedDigraph player2,
                            Map<String, Integer> labelToIndex) {
         this.numLetters = numLetters;
-        this.I0 = I0;
+        this.I = I0;
         this.F = F;
         this.player2 = player2;
         this.labelToIndex = labelToIndex;
@@ -56,7 +56,7 @@ public class FiniteStateSets {
 
             // Compute initial states for the given word length
             List<List<Integer>> initialStates =
-                    AutomataConverter.getWords(I0, wordLen);
+                    AutomataConverter.getWords(I, wordLen);
 
             LOGGER.debug("Found " + initialStates.size() + " initial words");
             //LOGGER.debug("Initial: " + initialStates);
@@ -100,7 +100,7 @@ public class FiniteStateSets {
                     "configurations of length " + wordLen);
 
             //final Automata complementF = AutomataConverter.getComplement(F);
-            reachable = AutomataConverter.getWordAutomaton(I0, wordLen);
+            reachable = AutomataConverter.getWordAutomaton(I, wordLen);
 
             // do one initial P2 transition
             Automata R;
@@ -203,7 +203,7 @@ public class FiniteStateSets {
             if (player2Dest.isEmpty() && !knownWinningStates.contains(w))
                 throw new RuntimeException(
                         "There is a non-final reachable configuration from " +
-                                "which player cannot make a move: " + makeReadable(w));
+                                "which T cannot make a move: " + makeReadable(w));
         }
 
         Set<List<Integer>> winningStates = new HashSet<List<Integer>>();
@@ -219,7 +219,7 @@ public class FiniteStateSets {
 
             for (List<Integer> w : reachable) {
                 if (!winningStates.contains(w)) {
-                    // check whether player 2 can reach a winning position
+                    // check whether T 2 can reach a winning position
                     List<List<Integer>> player2Dest = player2Moves.get(w);
                     if (player2Dest != null)
                         for (List<Integer> v : player2Dest)
@@ -238,8 +238,8 @@ public class FiniteStateSets {
 
             for (List<Integer> w : reachable) {
                 if (!winningStates.contains(w)) {
-                    // check whether player 1 must move to a winning position
-                    // for player 2
+                    // check whether T 1 must move to a winning position
+                    // for T 2
                     List<List<Integer>> player1Dest = player1Moves.get(w);
                     if (player1Dest != null &&
                             winningStates.containsAll(player1Dest)) {
@@ -270,7 +270,7 @@ public class FiniteStateSets {
                 VerificationUltility.computeDomain(player2, numLetters);
 
         {
-            // Check that at most one player can move from each
+            // Check that at most one T can move from each
             // reachable configuration
 
             final Automata p1p2Configs =
@@ -287,7 +287,7 @@ public class FiniteStateSets {
         }
 
         {
-            // Check that at least one player can move from each
+            // Check that at least one T can move from each
             // reachable configuration
 
             final Automata p1p2UnionConfigs =
@@ -303,7 +303,7 @@ public class FiniteStateSets {
             if (cex != null)
                 throw new RuntimeException(
                         "There is a non-final reachable configuration from " +
-                                "which neither player can make a move: " +
+                                "which neither T can make a move: " +
                                 makeReadable(cex));
         }
 
@@ -326,7 +326,7 @@ public class FiniteStateSets {
             if (cex != null)
                 throw new RuntimeException
                         ("Player 1 can move to a configuration that does not " +
-                                "belong to player 2: " + makeReadable(cex));
+                                "belong to T 2: " + makeReadable(cex));
         }
 
         {
@@ -342,7 +342,7 @@ public class FiniteStateSets {
             if (cex != null)
                 throw new RuntimeException
                         ("Player 2 can move to a configuration that does not " +
-                                "belong to player 1: " + makeReadable(cex));
+                                "belong to T 1: " + makeReadable(cex));
         }
 
         Automata winningStates = AutomataConverter.getWordAutomaton(F, wordLen);
@@ -364,14 +364,14 @@ public class FiniteStateSets {
             LOGGER.debug("nextLevel (1): " + nextLevel.getStates().length);
 
             if (AutomataConverter.getWords(nextLevel, wordLen, 1).isEmpty()) {
-                // finished, but add also an automaton for player 2
+                // finished, but add also an automaton for T 2
                 res.add(nextLevel);
             } else {
                 winningStates =
                         AutomataConverter.minimiseAcyclic(
                                 VerificationUltility.getUnion(winningStates, nextLevel));
 
-                // compute states from which all player 1 moves lead to
+                // compute states from which all T 1 moves lead to
                 // winningStates
                 final Automata notWinning =
                         AutomataConverter.getComplement(winningStates);
@@ -425,14 +425,14 @@ public class FiniteStateSets {
                     cex = w;
         } else {
             for (List<Integer> w :
-                    AutomataConverter.getWords(I0, wordLen))
+                    AutomataConverter.getWords(I, wordLen))
                 if (!winningStates.contains(w))
                     cex = w;
         }
         if (cex != null)
             throw new RuntimeException
                     ("There is a reachable configuration from " +
-                            "which player 2 cannot win: " +
+                            "which T 2 cannot win: " +
                             makeReadable(cex));
     }
 
@@ -459,13 +459,13 @@ public class FiniteStateSets {
         else
             cex = AutomataConverter.getSomeWord
                     (VerificationUltility.getIntersectionLazily
-                            (AutomataConverter.getWordAutomaton(I0, wordLen),
+                            (AutomataConverter.getWordAutomaton(I, wordLen),
                                     winningStates, true));
 
         if (cex != null)
             throw new RuntimeException
                     ("There is a reachable configuration from " +
-                            "which player 2 cannot win: " +
+                            "which T 2 cannot win: " +
                             makeReadable(cex));
     }
 

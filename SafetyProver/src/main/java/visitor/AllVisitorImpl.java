@@ -25,23 +25,23 @@ public class AllVisitorImpl implements AllVisitor<Object, RegularModel> {
 
     public Object visit(Model p, RegularModel arg) {
 
-        Automata I0 = (Automata) p.automatonrule_1.accept(this, arg);
+        Automata I = (Automata) p.automatonrule_1.accept(this, arg);
         p.maybeclosed_.accept(this, arg);
         Automata F = (Automata) p.automatonrule_2.accept(this, arg);
-        EdgeWeightedDigraph player2 = (EdgeWeightedDigraph) p.transducerrule_.accept(this, arg);
+        EdgeWeightedDigraph T = (EdgeWeightedDigraph) p.transducerrule_.accept(this, arg);
 
         for (VerifierOption o : p.listverifieroption_)
             o.accept(this, arg);
 
         final int numLabels = labelToIndex.size();
 
-        I0.setNumLabels(numLabels);
+        I.setNumLabels(numLabels);
         F.setNumLabels(numLabels);
 
         //set mapping of Label
-        arg.setI0(I0);
+        arg.setI(I);
         arg.setF(F);
-        arg.setPlayer2(player2);
+        arg.setT(T);
         arg.setLabelToIndex(labelToIndex);
         arg.setNumberOfLetters(numLabels);
 

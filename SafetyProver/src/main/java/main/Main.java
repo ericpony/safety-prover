@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import verification.FiniteStateSets;
 import verification.IncrementalVerifier;
+import verification.LStarInvariantSynth;
 import verification.MonolithicVerifier;
 import visitor.AllVisitorImpl;
 import visitor.RegularModel;
@@ -56,9 +57,23 @@ public class Main {
 
         determize(problem);
 
+        FiniteStateSets finiteStates = new FiniteStateSets(problem.getNumberOfLetters(),
+                problem.getI0(), problem.getF(),
+                problem.getPlayer2(),
+                problem.getLabelToIndex());
+
         //verifyFiniteInstances(problem, problem.getExplicitChecksUntilLength());
 
-        if (false && problem.getCloseInitStates() && !problem.getAlwaysMonolithic()) {
+        if (problem.getPrecomputedInv()) {
+            final LStarInvariantSynth lstarInvSynth =
+                    new LStarInvariantSynth(problem.getNumberOfLetters(),
+                            problem.getI0(), problem.getF(),
+                            problem.getPlayer1(),
+                            problem.getPlayer2(),
+                            finiteStates, 5);
+            Automata inv = lstarInvSynth.infer();
+
+        } else if (false && problem.getCloseInitStates() && !problem.getAlwaysMonolithic()) {
             IncrementalVerifier verifier =
                     new IncrementalVerifier(problem, SOLVER_FACTORY,
                             problem.getUseRankingFunctions(),

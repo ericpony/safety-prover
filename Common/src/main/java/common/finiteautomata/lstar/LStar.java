@@ -4,10 +4,24 @@ import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
 import common.finiteautomata.State;
 import common.finiteautomata.language.InclusionCheckingImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import verification.Teacher;
 
 import java.util.*;
 
 public class LStar {
+
+    public static Automata inferWith(Teacher teacher) {
+        final Logger LOGGER = LogManager.getLogger();
+        LOGGER.info("Using L* to inferWith system invariant");
+        final LStar lstar = new LStar(teacher);
+        lstar.setup();
+        lstar.solve();
+        LOGGER.info("FOUND SOLUTION!");
+        LOGGER.debug(lstar.getSolution());
+        return lstar.getSolution();
+    }
 
     // simple test for the algorithm
     public static void main(String[] args) {
@@ -26,7 +40,7 @@ public class LStar {
         sol.addTrans(2, 1, 3);
         sol.addTrans(3, 1, 0);
 
-        final Teacher teacher = new Teacher() {
+        final Teacher teacher = new Teacher(2) {
             public boolean isAccepted(List<Integer> word) {
                 System.out.println(word + " -> " + sol.accepts(word));
                 return sol.accepts(word);
@@ -41,20 +55,14 @@ public class LStar {
 
                 InclusionCheckingImpl ic = new InclusionCheckingImpl();
 
-                List<Integer> cex =
-                        ic.findCounterExample(hyp,
-                                AutomataConverter
-                                        .toCompleteDFA(sol));
+                List<Integer> cex = ic.findCounterExample(hyp, AutomataConverter.toCompleteDFA(sol));
                 if (cex != null) {
                     System.out.println("negative cex: " + cex);
                     negCEX.add(cex);
                     return false;
                 }
 
-                cex =
-                        ic.findCounterExample(sol,
-                                AutomataConverter
-                                        .toCompleteDFA(hyp));
+                cex = ic.findCounterExample(sol, AutomataConverter.toCompleteDFA(hyp));
                 if (cex != null) {
                     System.out.println("positive cex: " + cex);
                     posCEX.add(cex);
@@ -65,7 +73,7 @@ public class LStar {
             }
         };
 
-        final LStar lstar = new LStar(2, teacher);
+        final LStar lstar = new LStar(teacher);
         lstar.setup();
         lstar.solve();
     }
@@ -78,16 +86,13 @@ public class LStar {
 
     private Node classTree = null;
 
-    private List<List<Integer>> distWords =
-            new ArrayList<List<Integer>>();
+    private List<List<Integer>> distWords = new ArrayList<List<Integer>>();
 
-    private static final List<Integer> emptyWord =
-            new ArrayList<Integer>();
+    private static final List<Integer> emptyWord = new ArrayList<Integer>();
 
-    public LStar(int numLetters,
-                 Teacher teacher) {
-        this.numLetters = numLetters;
+    public LStar(Teacher teacher) {
         this.teacher = teacher;
+        this.numLetters = teacher.getNumLetters();
     }
 
     public void setup() {
@@ -113,12 +118,10 @@ public class LStar {
         } else {
             classTree = new Node(emptyWord,
                     new Node(initAccepting ?
-                            negCEX.get(0) :
-                            emptyWord,
+                            negCEX.get(0) : emptyWord,
                             null, null),
                     new Node(initAccepting ?
-                            emptyWord :
-                            posCEX.get(0),
+                            emptyWord : posCEX.get(0),
                             null, null));
         }
     }
@@ -192,10 +195,8 @@ public class LStar {
                             if (oldDistPrefix.equals(bestDistWord))
                                 continue;
 
-                            final List<Integer> a =
-                                    new ArrayList<Integer>(nodeA.word);
-                            final List<Integer> b =
-                                    new ArrayList<Integer>(nodeB.word);
+                            final List<Integer> a = new ArrayList<Integer>(nodeA.word);
+                            final List<Integer> b = new ArrayList<Integer>(nodeB.word);
 
                             a.addAll(oldDistPrefix);
                             b.addAll(oldDistPrefix);
@@ -246,7 +247,7 @@ public class LStar {
 
             hypAut = extractAutomaton(accessWords);
 
-            if (posCEX.isEmpty() ? hypAut.accepts(cex) : !hypAut.accepts(cex)) {
+            if (posCEX.isEmpty() == hypAut.accepts(cex)) {
                 // the counterexample has not been eliminated yet, try again
             } else {
                 posCEX.clear();
@@ -286,9 +287,7 @@ public class LStar {
 
                 for (int l = 0; l < numLetters; ++l) {
                     extWord.add(l);
-                    result.addTrans(index, l,
-                            accessIndex.get(classTree.sift(extWord)
-                                    .word));
+                    result.addTrans(index, l, accessIndex.get(classTree.sift(extWord).word));
                     extWord.remove(extWord.size() - 1);
                 }
 

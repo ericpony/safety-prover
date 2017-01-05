@@ -25,7 +25,7 @@ public class InductivenessChecking {
     private int numLetters;
 	
     /**
-     * Make sure that I0, label starting from 1
+     * Make sure that I, label starting from 1
      */
     public InductivenessChecking(Automata A,
 				 Automata knownInv,
@@ -75,13 +75,13 @@ public class InductivenessChecking {
 	int numStatesA = A.getStates().length;
 	int numStatesCA = complementA.getStates().length;
 	int numStatesKI = knownInv.getStates().length;
-	int numStatesPlayer = player.V();
+	int numStatesPlayer = T.V();
 
 	EdgeWeightedDigraph product =
 	    new EdgeWeightedDigraph(numStatesA * numStatesPlayer *
 				    numStatesCA * numStatesKI);
 	product.setInitState(VerificationUltility.hash(A.getInitState(),
-						       player.getInitState(),
+						       T.getInitState(),
 						       complementA.getInitState(),
 						       knownInv.getInitState(),
 						       numStatesA,
@@ -91,7 +91,7 @@ public class InductivenessChecking {
 	//set accepting
 	Set<Integer> acceptings = new HashSet<Integer>();
 	for (int acceptAx: A.getAcceptingStates()) {
-	    for (int acceptPlayer: player.getAcceptingStates()) {
+	    for (int acceptPlayer: T.getAcceptingStates()) {
 		for (int acceptNAy: complementA.getAcceptingStates()) {
 		    for (int acceptKI: knownInv.getAcceptingStates()) {
 			acceptings.add(VerificationUltility.hash(acceptAx,
@@ -114,7 +114,7 @@ public class InductivenessChecking {
 	List<DirectedEdgeWithInputOutput> edgesKI =
 	    VerificationUltility.getEdges(knownInv);
 	
-	for(DirectedEdge edge: player.edges()) {
+	for(DirectedEdge edge: T.edges()) {
 	    DirectedEdgeWithInputOutput edgePlayer = (DirectedEdgeWithInputOutput) edge;
 	    for(DirectedEdgeWithInputOutput edgeAx: edgesA)
 		if (edgePlayer.getInput() == edgeAx.getInput())

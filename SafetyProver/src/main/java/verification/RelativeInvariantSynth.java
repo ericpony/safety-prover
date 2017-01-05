@@ -1,21 +1,19 @@
 package verification;
 
-import java.util.List;
-import java.util.Set;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.sat4j.specs.ContradictionException;
-import org.sat4j.specs.TimeoutException;
-
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-
 import elimination.CEElimination;
 import encoding.AutomataEncoding;
 import encoding.BoolValToAutomaton;
 import encoding.ISatSolver;
 import encoding.ISatSolverFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.sat4j.specs.ContradictionException;
+import org.sat4j.specs.TimeoutException;
+
+import java.util.List;
+import java.util.Set;
 
 public class RelativeInvariantSynth {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -35,132 +33,132 @@ public class RelativeInvariantSynth {
     private OldCounterExamples oldCounterExamples;
 
     public RelativeInvariantSynth(ISatSolverFactory solverFactory,
-				  int numLetters,
-				  Automata I0,
-				  Automata relevantStates,
-				  EdgeWeightedDigraph player1,
-				  EdgeWeightedDigraph player2,
-				  List<Integer> excludedWord,
-				  OldCounterExamples oldCounterExamples,
-				  int automataNumStates) {
-	solver = solverFactory.spawnSolver();
-	this.I0 = I0;
-	this.relevantStates = relevantStates;
-	this.excludedWord = excludedWord;
-	this.player1 = player1;
-	this.player2 = player2;
-	this.oldCounterExamples = oldCounterExamples;
-	this.numLetters = numLetters;
-	this.automataNumStates = automataNumStates;
+                                  int numLetters,
+                                  Automata I0,
+                                  Automata relevantStates,
+                                  EdgeWeightedDigraph player1,
+                                  EdgeWeightedDigraph player2,
+                                  List<Integer> excludedWord,
+                                  OldCounterExamples oldCounterExamples,
+                                  int automataNumStates) {
+        solver = solverFactory.spawnSolver();
+        this.I0 = I0;
+        this.relevantStates = relevantStates;
+        this.excludedWord = excludedWord;
+        this.player1 = player1;
+        this.player2 = player2;
+        this.oldCounterExamples = oldCounterExamples;
+        this.numLetters = numLetters;
+        this.automataNumStates = automataNumStates;
     }
 
     public Automata infer() {
-	AutomataEncoding automataEncoding =
-	    new AutomataEncoding(solver,
-				 automataNumStates,
-				 numLetters);
+        AutomataEncoding automataEncoding =
+                new AutomataEncoding(solver,
+                        automataNumStates,
+                        numLetters);
 
-	try {
-	    LOGGER.debug("Encoding automaton with " + automataNumStates + " states");
-	    automataEncoding.encode();
+        try {
+            LOGGER.debug("Encoding automaton with " + automataNumStates + " states");
+            automataEncoding.encode();
 
-	    //	    WordAcceptance acc = new WordAcceptance(automataEncoding);
-	    //	    int accept = acc.encodeNeg(excludedWord);
-	    int accept = automataEncoding.acceptWord(excludedWord);
-	    solver.addClause(new int[] { -accept });
+            //	    WordAcceptance acc = new WordAcceptance(automataEncoding);
+            //	    int accept = acc.encodeNeg(excludedWord);
+            int accept = automataEncoding.acceptWord(excludedWord);
+            solver.addClause(new int[]{-accept});
 
-	    boolean unsat = true;
-	    boolean success = false;
+            boolean unsat = true;
+            boolean success = false;
 
-	    int round = 0;
+            int round = 0;
 
-	    CEElimination ceElimination = new CEElimination(solver);
+            CEElimination ceElimination = new CEElimination(solver);
 
-	    updateWithOldCE(automataEncoding, ceElimination);
+            updateWithOldCE(automataEncoding, ceElimination);
 
-	    while (solver.isSatisfiable()) {
-		round += 1;
-		LOGGER.debug("Satisfiable, round " + round +
-			     ", states " + automataNumStates +
-			     ", clause num " + solver.getClauseNum());
+            while (solver.isSatisfiable()) {
+                round += 1;
+                LOGGER.debug("Satisfiable, round " + round +
+                        ", states " + automataNumStates +
+                        ", clause num " + solver.getClauseNum());
 
-		unsat = false;
-		Set<Integer> modelPosVars = solver.positiveModelVars();
+                unsat = false;
+                Set<Integer> modelPosVars = solver.positiveModelVars();
 
-		Automata automaton =
-		    BoolValToAutomaton.toAutomata(modelPosVars, automataEncoding);
-		assert(automaton.isDFA());
-		//		LOGGER.debug("Find Automaton ");
-		//		LOGGER.debug(automaton);
+                Automata automaton =
+                        BoolValToAutomaton.toAutomata(modelPosVars, automataEncoding);
+                assert (automaton.isDFA());
+                //		LOGGER.debug("Find Automaton ");
+                //		LOGGER.debug(automaton);
 
-		////////////////////////////////////////////////////////
-		// S1
+                ////////////////////////////////////////////////////////
+                // S1
 
-		SubsetChecking s1 = new SubsetChecking(I0, automaton);
-		List<Integer> w = s1.check();
-		if (w != null) {
-		    LOGGER.debug("S1 failed!");
-		    LOGGER.debug(w);
-		    ceElimination.ce0Elimination(automataEncoding, w);
-		    oldCounterExamples.addL0B(w);
-		    continue;
-		}
+                SubsetChecking s1 = new SubsetChecking(I0, automaton);
+                List<Integer> w = s1.check();
+                if (w != null) {
+                    LOGGER.debug("S1 failed!");
+                    LOGGER.debug(w);
+                    ceElimination.ce0Elimination(automataEncoding, w);
+                    oldCounterExamples.addL0B(w);
+                    continue;
+                }
 
-		////////////////////////////////////////////////////////
-		// S2
+                ////////////////////////////////////////////////////////
+                // S2
 
-		InductivenessChecking s2 =
-		    new InductivenessChecking(automaton, relevantStates,
-					      player1, numLetters);
-		List<List<Integer>> xy = s2.check();
-		if(xy != null){
-		    LOGGER.debug("S2 failed for P1!");
-		    LOGGER.debug(xy);
-		    ceElimination.ce1Elimination(automataEncoding, xy);
-		    oldCounterExamples.addL1(xy);
-		    continue;
-		}
+                InductivenessChecking s2 =
+                        new InductivenessChecking(automaton, relevantStates,
+                                player1, numLetters);
+                List<List<Integer>> xy = s2.check();
+                if (xy != null) {
+                    LOGGER.debug("S2 failed for P1!");
+                    LOGGER.debug(xy);
+                    ceElimination.ce1Elimination(automataEncoding, xy);
+                    oldCounterExamples.addL1(xy);
+                    continue;
+                }
 
-		s2 = new InductivenessChecking(automaton, relevantStates,
-					       player2, numLetters);
-		xy = s2.check();
-		if(xy != null){
-		    LOGGER.debug("S2 failed for P2!");
-		    LOGGER.debug(xy);
-		    ceElimination.ce1Elimination(automataEncoding, xy);
-		    oldCounterExamples.addL1(xy);
-		    continue;
-		}
+                s2 = new InductivenessChecking(automaton, relevantStates,
+                        player2, numLetters);
+                xy = s2.check();
+                if (xy != null) {
+                    LOGGER.debug("S2 failed for P2!");
+                    LOGGER.debug(xy);
+                    ceElimination.ce1Elimination(automataEncoding, xy);
+                    oldCounterExamples.addL1(xy);
+                    continue;
+                }
 
-		// otherwise we are finished!
-		LOGGER.debug("FOUND SOLUTION!");
-		return automaton;
-	    }
-
-	    LOGGER.debug("no more models");
-	    return null;
-	} catch (ContradictionException e) {
-                LOGGER.info("Unsatisfiable!");
-                return null;
-            } catch (TimeoutException e) {
-                LOGGER.info("Time out!");
-                return null;
+                // otherwise we are finished!
+                LOGGER.debug("FOUND SOLUTION!");
+                return automaton;
             }
+
+            LOGGER.debug("no more models");
+            return null;
+        } catch (ContradictionException e) {
+            LOGGER.info("Unsatisfiable!");
+            return null;
+        } catch (TimeoutException e) {
+            LOGGER.info("Time out!");
+            return null;
+        }
     }
 
     private void updateWithOldCE(AutomataEncoding automataEncoding,
-				 CEElimination ceElimination)
-	throws ContradictionException {
+                                 CEElimination ceElimination)
+            throws ContradictionException {
 
-	LOGGER.debug("Updating encoding with old counter examples...");
+        LOGGER.debug("Updating encoding with old counter examples...");
 
-	for(List<Integer> ce: oldCounterExamples.getL0B()){
-	    ceElimination.ce0Elimination(automataEncoding, ce);
-	}
+        for (List<Integer> ce : oldCounterExamples.getL0B()) {
+            ceElimination.ce0Elimination(automataEncoding, ce);
+        }
 
-	for(List<List<Integer>> ce: oldCounterExamples.getL1()){
-	    ceElimination.ce1Elimination(automataEncoding, ce);
-	}
+        for (List<List<Integer>> ce : oldCounterExamples.getL1()) {
+            ceElimination.ce1Elimination(automataEncoding, ce);
+        }
     }
 
 }
