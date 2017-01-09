@@ -40,7 +40,7 @@ public class AllVisitorImpl implements AllVisitor<Object, RegularModel> {
 
         //set mapping of Label
         arg.setI(I);
-        arg.setF(F);
+        arg.setB(F);
         arg.setT(T);
         arg.setLabelToIndex(labelToIndex);
         arg.setNumberOfLetters(numLabels);

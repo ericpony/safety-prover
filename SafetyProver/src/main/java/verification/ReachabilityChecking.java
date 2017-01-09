@@ -186,7 +186,7 @@ public class ReachabilityChecking {
                     System.out.println("VERDICT: Bad configurations are not reachable from every " +
                             (closeUnderTransitions ? "reachable" : "initial") + " configuration.");
                     System.out.println();
-                    System.out.println("// Configurations visited in the game");
+                    System.out.println("// Configurations visited in the game are contained in");
                     System.out.println(automatonB.prettyPrint("B", indexToLabel));
 
                     if (systemInvariant != null) {

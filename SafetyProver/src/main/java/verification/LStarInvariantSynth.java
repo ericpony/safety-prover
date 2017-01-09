@@ -2,7 +2,6 @@ package verification;
 
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.lstar.LStar;
 
 
 public class LStarInvariantSynth {
@@ -15,7 +14,7 @@ public class LStarInvariantSynth {
                                EdgeWeightedDigraph player2,
                                FiniteStateSets finiteStates,
                                int explicitExplorationDepth) {
-        this.teacher = new LStarDefaultTeacher(numLetters, I0, F, player2, finiteStates, explicitExplorationDepth);
+        this.teacher = new BasicRMCTeacher(numLetters, I0, F, player2, finiteStates, explicitExplorationDepth);
     }
 
     public void setTeacher(Teacher t) {

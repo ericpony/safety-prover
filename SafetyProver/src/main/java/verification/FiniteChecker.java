@@ -113,7 +113,7 @@ public class FiniteChecker {
 			    if (finalStates.contains(w))
 				canGotoF = true;
 			if (!canGotoF) {
-			    // then player 2 needs to be able to
+			    // then T 2 needs to be able to
 			    // go to somewhere smaller
 			    System.out.print("(assert (or false");
 			    for (List<Integer> w : player2Dest)

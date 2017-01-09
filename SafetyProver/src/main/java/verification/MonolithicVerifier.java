@@ -38,8 +38,8 @@ public class MonolithicVerifier {
 
         OldCounterExamples oldCEs = new OldCounterExamples();
         FiniteStateSets finiteStates = new FiniteStateSets(problem.getNumberOfLetters(),
-                problem.getI0(), problem.getF(),
-                problem.getPlayer2(),
+                problem.getI(), problem.getB(),
+                problem.getT(),
                 problem.getLabelToIndex());
 
         Automata systemInvariant = null;
@@ -76,12 +76,12 @@ public class MonolithicVerifier {
                                 true,
                                 SOLVER_FACTORY);
                         checking.setAutomataNumStates(numStateAutomata);
-                        checking.setF(problem.getF());
-                        checking.setWinningStates(problem.getF());
-                        checking.setI0(problem.getI0());
+                        checking.setF(problem.getB());
+                        checking.setWinningStates(problem.getB());
+                        checking.setI0(problem.getI());
                         checking.setNumLetters(problem.getNumberOfLetters());
 //                        checking.setPlayer1(problem.getPlayer1());
-                        checking.setPlayer2(problem.getPlayer2());
+                        checking.setPlayer2(problem.getT());
                         checking.setTransducerNumStates(numStateTransducer);
                         checking.setLabelToIndex(problem.getLabelToIndex());
                         checking.setOldCounterExamples(oldCEs);

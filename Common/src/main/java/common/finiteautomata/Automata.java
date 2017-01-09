@@ -260,6 +260,9 @@ public class Automata {
         return states;
     }
 
+    public int getNumStates() {
+        return states.length;
+    }
 
     public int getNumLabels() {
         return numLabels;

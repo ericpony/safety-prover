@@ -119,18 +119,18 @@ public class IncrementalVerifier {
     public void setup() {
         player1Configs = VerificationUltility.computeDomain(problem.getPlayer1(),
                 problem.getNumberOfLetters());
-        winningStates = problem.getF();
+        winningStates = problem.getB();
 
         sosBound = problem.getMaxNumOfStatesTransducer() * problem.getMaxNumOfStatesTransducer() +
                 problem.getMaxNumOfStatesAutomaton() * problem.getMaxNumOfStatesAutomaton();
 
         finiteStates = new FiniteStateSets(problem.getNumberOfLetters(),
-                problem.getI(), problem.getF(), problem.getT(),
+                problem.getI(), problem.getB(), problem.getT(),
                 problem.getLabelToIndex());
 
         if (preComputeReachable) {
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
-                    problem.getI(), problem.getF(), problem.getT(),
+                    problem.getI(), problem.getB(), problem.getT(),
                     finiteStates, 5);
             systemInvariant = LStar.inferWith(teacher);
         } else {
@@ -570,7 +570,7 @@ public class IncrementalVerifier {
         ReachabilityChecking checking =
                 new ReachabilityChecking(useRF, false, false, SOLVER_FACTORY);
         checking.setAutomataNumStates(numStateAutomata);
-        checking.setF(problem.getF());
+        checking.setF(problem.getB());
         checking.setWinningStates(winningStates);
         checking.setI0(problem.getI());
         checking.setNumLetters(problem.getNumberOfLetters());
@@ -647,7 +647,7 @@ public class IncrementalVerifier {
                 Automata knownInv =
                         VerificationUltility.getIntersection
                                 (systemInvariant,
-                                        AutomataConverter.getComplement(problem.getF()));
+                                        AutomataConverter.getComplement(problem.getB()));
                 for (int num = 1; num < 20 && newInv == null; ++num) {
                     RelativeInvariantSynth invSynth =
                             new RelativeInvariantSynth(SOLVER_FACTORY,
@@ -690,7 +690,7 @@ public class IncrementalVerifier {
 
         final Set<List<Integer>> p2winning =
                 new HashSet<List<Integer>>();
-        p2winning.addAll(AutomataConverter.getWords(problem.getF(), len));
+        p2winning.addAll(AutomataConverter.getWords(problem.getB(), len));
 
         for (int i = 0; i < chosenBs.size(); ++i) {
             final Automata B = chosenBs.get(i);
@@ -777,7 +777,7 @@ public class IncrementalVerifier {
         System.out.println("// Approximation of reachable states");
         System.out.println(systemInvariant.prettyPrint("A", indexToLabel));
 
-        System.out.println("// States from which player 2 can move and win");
+        System.out.println("// States from which T 2 can move and win");
         System.out.println(winningStates.prettyPrint("W", indexToLabel));
 
         System.out.println("// Progress relations" +

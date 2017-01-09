@@ -17,7 +17,7 @@ public class SubsetChecking {
 	private Automata B;
 	
 	/*
-	 * Make sure that I0, label starting from 1
+	 * Make sure that I, label starting from 1
 	 */
 	public SubsetChecking(Automata I0, Automata B){
 		this.I0 = I0;

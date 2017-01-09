@@ -6,14 +6,15 @@ import common.finiteautomata.Automata;
 import java.util.List;
 
 public abstract class RMCTeacher extends Teacher {
+
     protected final Automata I;
-    protected final Automata F;
+    protected final Automata B;
     protected final EdgeWeightedDigraph T;
 
-    public RMCTeacher(int numLetters, Automata I, Automata F, EdgeWeightedDigraph T) {
+    public RMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T) {
         super(numLetters);
         this.I = I;
-        this.F = F;
+        this.B = B;
         this.T = T;
     }
 

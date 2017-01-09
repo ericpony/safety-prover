@@ -1,25 +1,27 @@
 package verification;
 
+import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
 
 import java.util.List;
 
-class BasicRMCTeacher extends RMCTeacher {
+public class BasicRMCTeacher extends RMCTeacher {
+
     protected Automata relevantStates;
     protected FiniteStateSets finiteStates;
     protected int explicitExplorationDepth;
 
-    BasicRMCTeacher(int numLetters, Automata I, Automata F, EdgeWeightedDigraph T, FiniteStateSets finiteStateSets, int explicitExplorationDepth) {
-        super(numLetters, I, F, T);
-        this.relevantStates = AutomataConverter.getComplement(F);
+    public BasicRMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T, FiniteStateSets finiteStateSets, int explicitExplorationDepth) {
+        super(numLetters, I, B, T);
+        this.relevantStates = AutomataConverter.getComplement(B);
         this.finiteStates = finiteStateSets;
         this.explicitExplorationDepth = explicitExplorationDepth;
     }
 
     public boolean isAccepted(List<Integer> word) {
-        return finiteStates.isReachable(word);
+        return !B.accepts(word) && finiteStates.isReachable(word);
     }
 
     public boolean isCorrectLanguage(Automata hyp,
@@ -27,24 +29,34 @@ class BasicRMCTeacher extends RMCTeacher {
                                      List<List<Integer>> negCEX) {
         LOGGER.debug("found hypothesis, size " + hyp.getStates().length);
 
+        List<Integer> cex;
+        SubsetChecking sc;
         // first test: are initial states contained?
-        SubsetChecking s1 = new SubsetChecking(I, hyp);
-        List<Integer> w = s1.check();
-        if (w != null) {
-            LOGGER.debug("I not contained: " + w);
-            posCEX.add(w);
+        sc = new SubsetChecking(I, hyp);
+        cex = sc.check();
+        if (cex != null) {
+            LOGGER.debug("A configuration in I is not contained in hypothesis: " + cex);
+            posCEX.add(cex);
             return false;
         }
 
-        // second test: are concrete unreachable configurations excluded?
+        // second test: are bad configurations excluded?
+        Automata lang = VerificationUltility.getIntersection(hyp, B);
+        cex = AutomataConverter.getSomeShortestWord(lang);
+        if (cex != null) {
+            negCEX.add(cex);
+            return false;
+        }
+
+        // third test: are concrete unreachable configurations excluded?
         for (int l = 0; l <= explicitExplorationDepth; ++l) {
-            SubsetChecking s2 =
-                    new SubsetChecking(AutomataConverter.getWordAutomaton(hyp, l),
-                            finiteStates.getReachableStateAutomaton(l));
-            List<Integer> w2 = s2.check();
-            if (w2 != null) {
-                LOGGER.debug("not reachable: " + w2);
-                negCEX.add(w2);
+            sc = new SubsetChecking(
+                    AutomataConverter.getWordAutomaton(hyp, l),
+                    finiteStates.getReachableStateAutomaton(l));
+            cex = sc.check();
+            if (cex != null) {
+                LOGGER.debug("A configuration should not be contained in hypothesis: " + cex);
+                negCEX.add(cex);
                 return false;
             }
 //                for (List<Integer> w3 : AutomataConverter.getWords(hyp, l)) {
@@ -56,12 +68,11 @@ class BasicRMCTeacher extends RMCTeacher {
 //                }
         }
 
-        // third test: is the invariant inductive?
-        InductivenessChecking s2 = new InductivenessChecking(hyp, relevantStates,
-                T, getNumLetters());
-        List<List<Integer>> xy = s2.check();
+        // fourth test: is the invariant inductive?
+        InductivenessChecking ic = new InductivenessChecking(hyp, relevantStates, T, getNumLetters());
+        List<List<Integer>> xy = ic.check();
         if (xy != null) {
-            LOGGER.debug("inductiveness failed: " + xy);
+            LOGGER.debug("Hypothesis is not inductive: " + xy);
             if (finiteStates.isReachable(xy.get(0)))
                 posCEX.add(xy.get(1));
             else

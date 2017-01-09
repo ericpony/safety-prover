@@ -9,10 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 public class RegularModel {
-    private Automata I0;
-    private Automata F;
-    private EdgeWeightedDigraph player1;
-    private EdgeWeightedDigraph player2;
+    private Automata I;
+    private Automata B;
+    private EdgeWeightedDigraph T;
 
     private Map<String, Integer> labelToIndex = new HashMap<String, Integer>();
     private int numberOfLetters;
@@ -38,30 +37,32 @@ public class RegularModel {
 
     private int explicitChecksUntilLength = -1;
 
-    public Automata getI0() {
-        return I0;
+    public Automata getI() {
+        return I;
     }
 
-    public void setI0(Automata i0) {
-        I0 = i0;
+    public void setI(Automata initial) {
+        I = initial;
     }
-
-    public Automata getF() {
-        return F;
-    }
-
-    public void setF(Automata f) {
-        F = f;
-    }
-
-    public EdgeWeightedDigraph getPlayer1() { return player1; }
 
     public EdgeWeightedDigraph getT() {
-        return player2;
+        return T;
     }
 
-    public void setPlayer2(EdgeWeightedDigraph player2) {
-        this.player2 = player2;
+    public Automata getB() {
+        return B;
+    }
+
+    public void setB(Automata bad) {
+        B = bad;
+    }
+
+    public EdgeWeightedDigraph getPlayer1() {
+        return null;
+    }
+
+    public void setT(EdgeWeightedDigraph transition) {
+        this.T = transition;
     }
 
     public Map<String, Integer> getLabelToIndex() {
