@@ -134,12 +134,10 @@ public class LStar {
 
         final List<List<Integer>> posCEX = new ArrayList<List<Integer>>();
         final List<List<Integer>> negCEX = new ArrayList<List<Integer>>();
-
-        final List<List<Integer>> accessWords =
-                new ArrayList<List<Integer>>();
+        final List<List<Integer>> accessWords = new ArrayList<List<Integer>>();
         classTree.collectLeafWords(accessWords);
 
-        Automata hypAut = extractAutomaton(accessWords);
+        Automata lastHypAut = null, hypAut = extractAutomaton(accessWords);
         boolean cont = !teacher.isCorrectLanguage(hypAut, posCEX, negCEX);
 
         while (cont) {
@@ -156,7 +154,7 @@ public class LStar {
             Node lastSifted = null;
 
             int j = 0;
-            while (true) {
+            while (j <= cex.size()) {
                 final Node sifted = classTree.sift(prefix);
 
                 if (!sifted.word.equals(accessWords.get(currentState))) {
@@ -169,9 +167,7 @@ public class LStar {
                     final boolean[] swapped = new boolean[1];
 
                     classTree.findDistinguishingPoint
-                            (sifted.word,
-                                    accessWords.get(currentState),
-                                    distNode, swapped);
+                            (sifted.word, accessWords.get(currentState), distNode, swapped);
 
                     final Node nodeA = new Node(lastSifted.word, null, null);
                     final Node nodeB = new Node(prefix, null, null);
@@ -185,8 +181,7 @@ public class LStar {
 
                     // check whether we can find a shorter distinguishing word
                     for (List<Integer> oldDist : distWords) {
-                        final List<Integer> oldDistPrefix =
-                                new ArrayList<Integer>();
+                        final List<Integer> oldDistPrefix = new ArrayList<Integer>();
 
                         for (int i = 0;
                              i < oldDist.size() && i < bestDistWord.size() - 1;
@@ -228,11 +223,11 @@ public class LStar {
 
                     break;
                 }
+                if (j >= cex.size()) break;
 
                 lastSifted = sifted;
 
                 final int nextChar = cex.get(j++);
-
                 final State s = hypAut.getStates()[currentState];
                 final Set<Integer> nextStates = s.getDest(nextChar);
                 assert (nextStates.size() == 1);
@@ -247,6 +242,13 @@ public class LStar {
 
             hypAut = extractAutomaton(accessWords);
 
+            if (lastHypAut != null && lastHypAut.getNumStates() == hypAut.getNumStates()) {
+                System.err.println("error: L-star algorithm learned the same automaton twice!");
+                System.err.println("Automaton 1: " + lastHypAut);
+                System.err.println("Automaton 2: " + hypAut);
+                throw new RuntimeException("L-star algorithm got stuck");
+            }
+            lastHypAut = hypAut;
             if (posCEX.isEmpty() == hypAut.accepts(cex)) {
                 // the counterexample has not been eliminated yet, try again
             } else {
