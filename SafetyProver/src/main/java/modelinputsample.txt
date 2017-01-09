@@ -57,6 +57,8 @@ Bad {
     accepting: s1;
 }
 
+monolithicWitness;
+
 /**
  * Lower/Upper bound (inclusive) on the number of states considered for the
  * progress relations T

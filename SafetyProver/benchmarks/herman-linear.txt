@@ -1,0 +1,61 @@
+// herman-linear.txt
+// This an adaptation of Herman's protocol in a linear array. The last
+// (rightmost) process is never enabled, even with a token.
+//
+// N - no token
+// T - token
+
+// Configurations with at least one token
+Initial {
+    init: s0;
+
+    s0 -> s0 N;
+    s0 -> s0 T;
+
+    s0 -> s1 T;
+    
+    s1 -> s1 N;
+    s1 -> s1 T;
+
+    accepting: s1;
+}
+
+closedUnderTransitions;
+
+Transition {
+    init: s0;
+
+    s0 -> s0 N/N;
+    s0 -> s0 T/T;
+
+    // keep
+    s0 -> s1 T/T;
+    // pass to right
+    s0 -> s2 T/N;
+    
+    // Merge tokens
+    s2 -> s1 T/T;
+
+    // Pass token to right from s2
+    s2 -> s1 N/T;
+
+    s1 -> s1 N/N;
+    s1 -> s1 T/T;
+
+    accepting: s1;
+}
+
+// Configurations without token
+Bad {
+    init: s0;
+
+    s0 -> s0 N;
+
+    accepting: s0;
+}
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 10;
+automatonStateGuessing: 0 .. 4;
+

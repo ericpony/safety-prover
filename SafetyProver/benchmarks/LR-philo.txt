@@ -1,0 +1,67 @@
+// LR-philo.txt
+// Left-Right (deterministic) Dining Philosopher Protocol
+// Leters:
+// T - Thinking 
+// L - Left fork, no right fork
+// R - no left fork, Right fork
+// E - both forks held
+//
+// Leftmost philosopher (in a linearisation of the circular order) picks
+// right first, and then left. The other philosophers pick up the left fork
+// first.
+
+// Assumption: at least three philosophers. 
+Initial {
+    init: s0;
+
+    s0 -> s1 T;
+    s1 -> s2 T;
+    s2 -> s3 T;
+    s3 -> s3 T;
+
+    accepting: s3;
+}
+
+closedUnderTransitions;
+
+Transition {
+    init: s0;
+
+    // Not the first philosopher
+    s0 -> p0 T/T;
+    s0 -> p0 R/R;
+
+    p0 -> p0 T/T;
+    p0 -> p0 L/L;
+
+    p0 -> p1 T/L;
+    p0 -> p1 L/E;
+
+    p1 -> p1 T/T;
+    p1 -> p1 L/L;
+
+    // The first philosopher
+    s0 -> p1 T/R;
+    s0 -> p1 R/E;
+
+    accepting: p1;
+}
+
+// Everyone is waiting
+Bad {
+    init: s0;
+
+    s0 -> s1 L;
+    s1 -> s0 L;
+
+    s0 -> s2 R;
+    s2 -> s0 R;
+
+    accepting: s0;
+}
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 10;
+automatonStateGuessing: 0 .. 4;
+
