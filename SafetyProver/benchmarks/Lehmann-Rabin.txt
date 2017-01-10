@@ -1,0 +1,223 @@
+// Lehmann-Rabin dining philosopher protocol (LR'81)
+//
+// We follow the presentation of Duflot et al. (2004). This protocol is
+// the first symmetric solution to the dining philosopher problem (i.e.
+// all processes run precisely the same program). It is well-known that
+// there is no deterministic solution (see Lynch textbook).
+//
+// We use the following letters to denote the states of the local processes:
+// 1. H --- hungry
+// 2. Wl --- waiting for left fork
+// 3. Wr --- waiting for right fork
+// 4. Sl --- left fork selected, waiting for right fork
+// 5. Sr --- right fork selected, waiting for left fork
+// 6. E --- eat
+//
+// We now briefly describe the protocol below. Notice that when there are
+// more than one processes with enabled actions, the choice of which process
+// gets to move is nondeterministically determined by the scheduler.
+//
+// Each hungry philosopher tosses a coin to determine whether to wait for
+// left/right fork:
+// H -> Wl
+// H -> Wr
+//
+// When a fork is available, it can be picked up:
+// X Wl -> X Sl   (X in {H, Wl, Wr, Sl})
+// Wr X -> Sr X   (X in {H, Wl, Wr, Sr})
+//
+// When a fork has been picked up but the second one is being used by a
+// neighbour, the first fork may be dropped and the philosopher may go back
+// to the waiting state:
+// Sr Sr -> Sr H
+// Sl Sl -> H Sl
+//
+// When the second fork is available, pick it up and eat.
+// X Sr -> E      (X in {H, Wl, Wr, Sl})
+// Sl X -> E      (X in {H, Wl, Wr, Sr})
+//
+// The property to prove is that, under all schedulers, with probability 1
+// at least one philosopher gets to eat.
+
+Initial {
+
+  init: s0;
+
+  s0 -> s1 H;
+  s1 -> s2 H;
+  s2 -> s3 H;
+  s3 -> s3 H;
+
+  accepting: s3;
+
+/*
+  s0 -> s1 Sl;
+  s1 -> s2 Sr;
+  s2 -> s3 Wl;
+
+  accepting: s3;
+*/
+}
+
+closedUnderTransitions;
+
+Transition {
+
+  init: s0;
+
+  /////////////
+
+  s0 -> s1;
+
+  s1 -> s1 H/H;
+  s1 -> s1 Wl/Wl;
+  s1 -> s1 Wr/Wr;
+  s1 -> s1 Sl/Sl;
+  s1 -> s1 Sr/Sr;
+
+  s1 -> s2 H/Wl;
+  s1 -> s2 H/Wr;
+  s1 -> s2 Wl/Sl;
+  s1 -> s2 Wr/Sr;
+
+  s2 -> s2 H/H;
+  s2 -> s2 Wl/Wl;
+  s2 -> s2 Wr/Wr;
+  s2 -> s2 Sl/Sl;
+  s2 -> s2 Sr/Sr;
+
+  /////////////
+
+  s1 -> s6 H/H;
+  s1 -> s6 Wl/Wl;
+  s1 -> s6 Wr/Wr;
+  s1 -> s6 Sl/Sl;
+
+  s6 -> s2 Sr/E;
+
+  /////////////
+
+  s1 -> s7 Sr/Sr;
+
+  s7 -> s2 Sr/H;
+
+  /////////////
+
+  s1 -> s8 Sl/E;
+
+  s8 -> s2 H/H;
+  s8 -> s2 Wl/Wl;
+  s8 -> s2 Wr/Wr;
+  s8 -> s2 Sr/Sr;
+
+  /////////////
+
+  s1 -> s9 Sl/H;
+
+  s9 -> s2 Sl/Sl;
+
+  /////////////
+
+  // wrap-around case 1a
+
+  s0 -> s10;
+
+  s10 -> s11 Sr/E;
+
+  s11 -> s11 H/H;
+  s11 -> s11 Wl/Wl;
+  s11 -> s11 Wr/Wr;
+  s11 -> s11 Sl/Sl;
+  s11 -> s11 Sr/Sr;
+
+  s11 -> s12 H/H;
+  s11 -> s12 Wl/Wl;
+  s11 -> s12 Wr/Wr;
+  s11 -> s12 Sl/Sl;
+
+  /////////////
+
+  // wrap-around case 1b
+
+  s0 -> s15;
+
+  s15 -> s16 Sr/H;
+
+  s16 -> s16 H/H;
+  s16 -> s16 Wl/Wl;
+  s16 -> s16 Wr/Wr;
+  s16 -> s16 Sl/Sl;
+  s16 -> s16 Sr/Sr;
+
+  s16 -> s17 Sr/Sr;
+
+  /////////////
+
+  // wrap-around case 2a
+
+  s0 -> s20;
+
+  s20 -> s21 H/H;
+  s20 -> s21 Wl/Wl;
+  s20 -> s21 Wr/Wr;
+  s20 -> s21 Sr/Sr;
+
+  s21 -> s21 H/H;
+  s21 -> s21 Wl/Wl;
+  s21 -> s21 Wr/Wr;
+  s21 -> s21 Sl/Sl;
+  s21 -> s21 Sr/Sr;
+
+  s21 -> s22 Sl/E;
+
+  /////////////
+
+  // wrap-around case 2b
+
+  s0 -> s25;
+
+  s25 -> s26 Sl/Sl;
+
+  s26 -> s26 H/H;
+  s26 -> s26 Wl/Wl;
+  s26 -> s26 Wr/Wr;
+  s26 -> s26 Sl/Sl;
+  s26 -> s26 Sr/Sr;
+
+  s26 -> s27 Sl/H;
+
+  /////////////
+
+  accepting: s2, s12, s17, s22, s27;
+}
+
+Bad {
+
+  init: s0;
+
+  s0 -> s0 H;
+  s0 -> s0 Wl;
+  s0 -> s0 Wr;
+  s0 -> s0 Sl;
+  s0 -> s0 Sr;
+
+  s0 -> s1 E;
+  s1 -> s2 E;
+
+  s2 -> s2 H;
+  s2 -> s2 Wl;
+  s2 -> s2 Wr;
+  s2 -> s2 Sl;
+  s2 -> s2 Sr;
+  s2 -> s2 E;
+
+  accepting: s2;
+}
+
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 3;
+automatonStateGuessing: 1 .. 5;
+
+logLevel: 1;

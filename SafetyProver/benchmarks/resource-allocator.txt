@@ -1,0 +1,90 @@
+// resource-allocator.txt
+// Resource-allocator protocol (Example 1 of vmcai'16 paper)
+
+// Any positive number of client processes (client processes have id 2, ...)
+Initial {
+    init: s0;
+
+    // everyone is idle
+    s0 -> s1 i;
+    s1 -> s2 i;
+    s2 -> s2 i;
+
+    accepting: s2;
+}
+
+closedUnderTransitions;
+
+Transition {
+    init: s0;
+
+    // a client in an idle state move to request
+    s0 -> r1 i/i;     
+    s0 -> r1 r/r;     
+    s0 -> r1 r/r;     
+
+    r1 -> r1 i/i;
+    r1 -> r1 r/r;
+    r1 -> r1 c/c;
+    
+    r1 -> r2 i/r;
+
+    r2 -> r2 i/i;
+    r2 -> r2 r/r;
+    r2 -> r2 c/c;
+
+    // allocator: i -> c and a client r/c
+    s0 -> p1 i/c;
+
+    p1 -> p1 i/i;
+    p1 -> p1 r/r;
+    p1 -> p1 c/c;
+
+    p1 -> p2 r/c;
+
+    p2 -> p2 i/i;
+    p2 -> p2 r/r;
+    p2 -> p2 c/c;
+
+    // allocator: c -> i and a client c/i
+    s0 -> q1 c/i;
+
+    q1 -> q1 i/i;
+    q1 -> q1 r/r;
+    q1 -> q1 c/c;
+
+    q1 -> q2 c/i;
+
+    q2 -> q2 i/i;
+    q2 -> q2 r/r;
+    q2 -> q2 c/c;
+
+    accepting: r2, p2, q2;
+}
+
+Bad {
+    init: s0;
+
+    // any i/r
+    s0 -> s0 i;
+    s0 -> s0 r;
+
+    // more than one process in critical section
+    s1 -> s2 c;
+
+    s2 -> s2 i;
+    s2 -> s2 r;
+    s2 -> s3 c;
+
+    s3 -> s3 i;
+    s3 -> s3 r;
+    s3 -> s3 c;
+
+    accepting: s3;
+}
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 10;
+automatonStateGuessing: 0 .. 4;
+

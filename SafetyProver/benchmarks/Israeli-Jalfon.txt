@@ -1,0 +1,88 @@
+// Israeli-Jalfon self-stabilising protocol (see IJ'90 in our CAV'16 paper for
+// more detail)
+// 
+// In a nutshell, this is a routing protocol in a ring-shaped topology, where
+// a process may hold a token. When a process holding a token is chosen by the 
+// scheduler, it will toss a coin and pass the token to the left/right each with
+// probability 1/2. When two tokens are held by the same process, they will be
+// merged. The initial configurations are configurations holding at least one
+// token. The final configurations (a.k.a. *stable* configurations) are those
+// where precisely one process is holding a token. The liveness property to
+// prove, hence, is that the probability of reaching a stable configuration
+// from any initial configuration is 1.
+
+Initial {
+
+  init : s0;
+
+  s0 -> s0 N;
+  s0 -> s0 T;
+
+  s0 -> s1 T;
+
+  s1 -> s1 N;
+  s1 -> s1 T;
+
+  s1 -> s2 T;
+
+  s2 -> s2 N;
+  s2 -> s2 T;
+
+  accepting: s2;
+}
+
+closedUnderTransitions;
+
+Transition {
+
+  init : s0;
+
+  s0 -> s1;
+  s0 -> s4;
+  s0 -> s7;
+  s0 -> s10;
+
+  s1 -> s1 N/N;
+  s1 -> s1 T/T;
+  s1 -> s2 T/N;
+  s2 -> s3 N/T;
+  s2 -> s3 T/T;
+  s3 -> s3 N/N;
+  s3 -> s3 T/T;
+
+  s4 -> s4 N/N;
+  s4 -> s4 T/T;
+  s4 -> s5 N/T;
+  s4 -> s5 T/T;
+  s5 -> s6 T/N;
+  s6 -> s6 N/N;
+  s6 -> s6 T/T;
+
+  s7 -> s8 N/T;
+  s7 -> s8 T/T;
+  s8 -> s8 N/N;
+  s8 -> s8 T/T;
+  s8 -> s9 T/N;
+  
+  s10 -> s11 T/N;
+  s11 -> s11 N/N;
+  s11 -> s11 T/T;
+  s11 -> s12 N/T;
+  s11 -> s12 T/T;
+
+  accepting: s3, s6, s9, s12;
+}
+
+Bad {
+
+  init : s0;
+
+  s0 -> s0 N;
+
+  accepting: s0;
+}
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 4;
+automatonStateGuessing: 1 .. 4;
