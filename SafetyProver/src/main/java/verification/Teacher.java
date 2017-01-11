@@ -6,7 +6,7 @@ import java.util.List;
 
 public abstract class Teacher {
 
-    private int numLetters;
+    private final int numLetters;
 
     public Teacher(int numLetters) {
         this.numLetters = numLetters;

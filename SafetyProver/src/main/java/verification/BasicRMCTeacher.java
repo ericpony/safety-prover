@@ -13,41 +13,43 @@ public class BasicRMCTeacher extends RMCTeacher {
     protected FiniteStateSets finiteStates;
     protected int explicitExplorationDepth;
 
-    public BasicRMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T, FiniteStateSets finiteStateSets, int explicitExplorationDepth) {
+    public BasicRMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T, int explicitExplorationDepth) {
         super(numLetters, I, B, T);
         this.relevantStates = AutomataConverter.getComplement(B);
-        this.finiteStates = finiteStateSets;
         this.explicitExplorationDepth = explicitExplorationDepth;
+        this.finiteStates = new FiniteStateSets(I, T);
     }
 
     public boolean isAccepted(List<Integer> word) {
-        return !B.accepts(word) && finiteStates.isReachable(word);
+        return !getBadStates().accepts(word);
     }
 
     public boolean isCorrectLanguage(Automata hyp,
                                      List<List<Integer>> posCEX,
                                      List<List<Integer>> negCEX) {
         LOGGER.debug("found hypothesis, size " + hyp.getStates().length);
-
         List<Integer> cex;
         SubsetChecking sc;
+
         // first test: are initial states contained?
-        sc = new SubsetChecking(I, hyp);
+        sc = new SubsetChecking(getInitialStates(), hyp);
         cex = sc.check();
         if (cex != null) {
-            LOGGER.debug("A configuration in I is not contained in hypothesis: " + cex);
+            LOGGER.debug("An initial configuration is not contained in hypothesis: " + cex);
             posCEX.add(cex);
             return false;
         }
 
         // second test: are bad configurations excluded?
-        Automata lang = VerificationUltility.getIntersection(hyp, B);
+        Automata lang = VerificationUltility.getIntersection(hyp, getBadStates());
         cex = AutomataConverter.getSomeShortestWord(lang);
         if (cex != null) {
+            LOGGER.debug("A bad configuration is contained in hypothesis: " + cex);
             negCEX.add(cex);
             return false;
         }
 
+        /*
         // third test: are concrete unreachable configurations excluded?
         for (int l = 0; l <= explicitExplorationDepth; ++l) {
             sc = new SubsetChecking(
@@ -55,21 +57,15 @@ public class BasicRMCTeacher extends RMCTeacher {
                     finiteStates.getReachableStateAutomaton(l));
             cex = sc.check();
             if (cex != null) {
-                LOGGER.debug("A configuration should not be contained in hypothesis: " + cex);
+                LOGGER.debug("An unreachable configuration is contained in hypothesis: " + cex);
                 negCEX.add(cex);
                 return false;
             }
-//                for (List<Integer> w3 : AutomataConverter.getWords(hyp, l)) {
-//                    if (!finiteStates.isReachable(w3)) {
-//                        LOGGER.debug("not reachable: " + w3);
-//                        negCEX.add(w3);
-//                        return false;
-//                    }
-//                }
         }
+        */
 
         // fourth test: is the invariant inductive?
-        InductivenessChecking ic = new InductivenessChecking(hyp, relevantStates, T, getNumLetters());
+        InductivenessChecking ic = new InductivenessChecking(hyp, relevantStates, getTransition(), getNumLetters());
         List<List<Integer>> xy = ic.check();
         if (xy != null) {
             LOGGER.debug("Hypothesis is not inductive: " + xy);

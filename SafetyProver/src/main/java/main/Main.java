@@ -14,13 +14,17 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
-import verification.*;
+import verification.BasicRMCTeacher;
+import verification.IncrementalVerifier;
+import verification.MonolithicVerifier;
+import verification.Teacher;
 import visitor.AllVisitorImpl;
 import visitor.RegularModel;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.List;
 import java.util.Map;
 
 public class Main {
@@ -56,18 +60,19 @@ public class Main {
 
         determize(problem);
 
-        FiniteStateSets finiteStates = new FiniteStateSets(problem.getNumberOfLetters(),
-                problem.getI(), problem.getB(),
-                problem.getT(),
-                problem.getLabelToIndex());
-
-        //verifyFiniteInstances(problem, problem.getExplicitChecksUntilLength());
+        Automata lang = VerificationUltility.getIntersection(problem.getB(), problem.getI());
+        List<Integer> cex = AutomataConverter.getSomeWord(lang);
+        if (cex != null) {
+            System.out.println("VERDICT: Bad configurations intersect initial configurations.");
+            return;
+        }
 
         if (problem.getPrecomputedInv()) {
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
-                    problem.getI(), problem.getB(), problem.getT(),
-                    finiteStates, 5);
+                    problem.getI(), problem.getB(), problem.getT(), 5);
             Automata invariant = LStar.inferWith(teacher);
+            //invariant = AutomataConverter.toMinimalDFA(invariant);
+            invariant = AutomataConverter.pruneUnreachableStates(invariant);
             Map<Integer, String> indexToLabel = problem.getIndexToLabel();
             System.err.print("\nL-star successfully found an invariant!\n");
             System.out.println("VERDICT: Bad configurations are not reachable from every " +
@@ -76,7 +81,7 @@ public class Main {
             System.out.println("// Configurations visited in the game are contained in");
             System.out.println(invariant.prettyPrint("Invariant", indexToLabel));
 
-        } else if (false && problem.getCloseInitStates() && !problem.getAlwaysMonolithic()) {
+        } else if (problem.getCloseInitStates() && !problem.getAlwaysMonolithic()) {
             IncrementalVerifier verifier =
                     new IncrementalVerifier(problem, SOLVER_FACTORY,
                             problem.getUseRankingFunctions(),
@@ -128,35 +133,23 @@ public class Main {
      * @param[in,out] problem  The problem to determinize
      */
     private static void determize(RegularModel problem) {
-        EdgeWeightedDigraph player2 = problem.getT();
-        if (!VerificationUltility.isDFA(player2, problem.getNumberOfLetters())) {
-            player2 = VerificationUltility.toDFA(problem.getT(), problem.getNumberOfLetters());
-            problem.setT(player2);
+        EdgeWeightedDigraph T = problem.getT();
+
+        if (!VerificationUltility.isDFA(T, problem.getNumberOfLetters())) {
+            T = VerificationUltility.toDFA(problem.getT(), problem.getNumberOfLetters());
+            problem.setT(T);
         }
 
-        Automata I0 = problem.getI();
-        if (!I0.isDFA()) {
-            I0 = AutomataConverter.toDFA(I0);
-            problem.setI(I0);
+        Automata I = problem.getI();
+        if (!I.isDFA()) {
+            I = AutomataConverter.toDFA(I);
+            problem.setI(I);
         }
 
-        Automata F = problem.getB();
-        if (!F.isDFA()) {
-            F = AutomataConverter.toDFA(F);
-            problem.setB(F);
-        }
-    }
-
-    public static void verifyFiniteInstances(RegularModel problem, int sizeBound) {
-        final FiniteStateSets finiteStates =
-                new FiniteStateSets(problem.getNumberOfLetters(),
-                        problem.getI(), problem.getB(),
-                        problem.getT(),
-                        problem.getLabelToIndex());
-        for (int s = 0; s <= sizeBound; ++s) {
-            System.out.println("Verifying system instance for length " + s + " ... ");
-//	    finiteStates.verifyInstance(s, problem.getCloseInitStates());
-            finiteStates.verifyInstanceSymbolically(s, problem.getCloseInitStates());
+        Automata B = problem.getB();
+        if (!B.isDFA()) {
+            B = AutomataConverter.toDFA(B);
+            problem.setB(B);
         }
     }
 

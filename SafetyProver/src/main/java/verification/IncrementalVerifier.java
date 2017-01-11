@@ -124,14 +124,11 @@ public class IncrementalVerifier {
         sosBound = problem.getMaxNumOfStatesTransducer() * problem.getMaxNumOfStatesTransducer() +
                 problem.getMaxNumOfStatesAutomaton() * problem.getMaxNumOfStatesAutomaton();
 
-        finiteStates = new FiniteStateSets(problem.getNumberOfLetters(),
-                problem.getI(), problem.getB(), problem.getT(),
-                problem.getLabelToIndex());
+        finiteStates = new FiniteStateSets(problem.getI(), problem.getT());
 
         if (preComputeReachable) {
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
-                    problem.getI(), problem.getB(), problem.getT(),
-                    finiteStates, 5);
+                    problem.getI(), problem.getB(), problem.getT(), 5);
             systemInvariant = LStar.inferWith(teacher);
         } else {
             systemInvariant = VerificationUltility.getUniversalAutomaton(problem.getNumberOfLetters());
@@ -684,6 +681,7 @@ public class IncrementalVerifier {
     // verify that the computed progress relations actually solve the
     // game, for configurations of length len
     private void verifyResults(int len) {
+        /*
         final EdgeWeightedDigraph player1 = problem.getPlayer1();
         final EdgeWeightedDigraph player2 = problem.getT();
         final int numLetters = problem.getNumberOfLetters();
@@ -762,6 +760,7 @@ public class IncrementalVerifier {
                     throw new RuntimeException
                             ("Solution is incorrect: don't know how to win from " +
                                     w);
+    */
     }
 
     ////////////////////////////////////////////////////////////////////////////

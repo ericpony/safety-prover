@@ -3,13 +3,11 @@ package verification;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 
-import java.util.List;
-
 public abstract class RMCTeacher extends Teacher {
 
-    protected final Automata I;
-    protected final Automata B;
-    protected final EdgeWeightedDigraph T;
+    private final Automata I;
+    private final Automata B;
+    private final EdgeWeightedDigraph T;
 
     public RMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T) {
         super(numLetters);
@@ -18,7 +16,15 @@ public abstract class RMCTeacher extends Teacher {
         this.T = T;
     }
 
-    abstract public boolean isAccepted(List<Integer> word);
+    public Automata getInitialStates() {
+        return I;
+    }
 
-    abstract public boolean isCorrectLanguage(Automata sol, List<List<Integer>> posCEX, List<List<Integer>> negCEX);
+    public Automata getBadStates() {
+        return B;
+    }
+
+    public EdgeWeightedDigraph getTransition() {
+        return T;
+    }
 }
