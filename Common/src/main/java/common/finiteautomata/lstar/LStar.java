@@ -137,7 +137,8 @@ public class LStar {
         final List<List<Integer>> accessWords = new ArrayList<List<Integer>>();
         classTree.collectLeafWords(accessWords);
 
-        Automata lastHypAut = null, hypAut = extractAutomaton(accessWords);
+        //Automata lastHypAut = null;
+        Automata hypAut = extractAutomaton(accessWords);
         boolean cont = !teacher.isCorrectLanguage(hypAut, posCEX, negCEX);
 
         while (cont) {
@@ -223,7 +224,7 @@ public class LStar {
 
                     break;
                 }
-                if (j >= cex.size()) break;
+                //if (j >= cex.size()) break;
 
                 lastSifted = sifted;
 
@@ -242,6 +243,7 @@ public class LStar {
 
             hypAut = extractAutomaton(accessWords);
 
+            /*
             if (lastHypAut != null && lastHypAut.getNumStates() == hypAut.getNumStates()) {
                 System.err.println("error: L-star algorithm learned the same automaton twice!");
                 System.err.println("Automaton 1: " + lastHypAut);
@@ -249,6 +251,7 @@ public class LStar {
                 throw new RuntimeException("L-star algorithm got stuck");
             }
             lastHypAut = hypAut;
+            */
             if (posCEX.isEmpty() == hypAut.accepts(cex)) {
                 // the counterexample has not been eliminated yet, try again
             } else {

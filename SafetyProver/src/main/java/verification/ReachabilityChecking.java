@@ -10,20 +10,16 @@ import common.finiteautomata.AutomataConverter;
 import elimination.CEElimination;
 import elimination.TransitivityPairSet;
 import encoding.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.TimeoutException;
 
 import java.io.FileNotFoundException;
 import java.util.*;
 
-class LOGGER {
-    public static void debug(Object msg) {
-        System.err.println(msg);
-    }
-}
-
 public class ReachabilityChecking {
-    //private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 
     private Map<String, Integer> labelToIndex = new HashMap<String, Integer>();
     /// directory name of the output

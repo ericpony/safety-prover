@@ -548,8 +548,6 @@ public class AutomataConverter {
     private static class TooManyWordsException extends RuntimeException {
     }
 
-    ;
-
     private static void exploreWords(State state,
                                      Automata lang,
                                      int wordLength,

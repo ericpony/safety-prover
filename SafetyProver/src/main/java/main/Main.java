@@ -45,7 +45,6 @@ public class Main {
             System.out.println("No input, doing nothing");
             return;
         }
-
         String fileName = args[0];
         RegularModel problem = parse(fileName);
 

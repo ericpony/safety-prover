@@ -37,10 +37,7 @@ public class MonolithicVerifier {
         }
 
         OldCounterExamples oldCEs = new OldCounterExamples();
-        FiniteStateSets finiteStates = new FiniteStateSets(problem.getNumberOfLetters(),
-                problem.getI(), problem.getB(),
-                problem.getT(),
-                problem.getLabelToIndex());
+        FiniteStateSets finiteStates = new FiniteStateSets(problem.getI(), problem.getT(), problem.getB());
 
         Automata systemInvariant = null;
         if (useGlobalSystemInvariant) {

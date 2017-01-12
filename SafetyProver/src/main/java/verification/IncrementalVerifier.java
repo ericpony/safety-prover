@@ -11,7 +11,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import visitor.RegularModel;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 public class IncrementalVerifier {
@@ -124,7 +126,7 @@ public class IncrementalVerifier {
         sosBound = problem.getMaxNumOfStatesTransducer() * problem.getMaxNumOfStatesTransducer() +
                 problem.getMaxNumOfStatesAutomaton() * problem.getMaxNumOfStatesAutomaton();
 
-        finiteStates = new FiniteStateSets(problem.getI(), problem.getT());
+        finiteStates = new FiniteStateSets(problem.getI(), problem.getT(), problem.getB());
 
         if (preComputeReachable) {
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
@@ -147,16 +149,7 @@ public class IncrementalVerifier {
     ////////////////////////////////////////////////////////////////////////////
 
     private void setupExploredConfigurations() {
-        for (; exploredBoundSofar <= explorationBound; ++exploredBoundSofar) {
-            final List<List<List<Integer>>> levels =
-                    finiteStates.getLevelSets(exploredBoundSofar);
-            for (int i = 2; i < levels.size(); i += 2) {
-                for (List<Integer> word : levels.get(i))
-                    configurationsUpToBound.add(new Configuration(word, exploredBoundSofar + i));
-            }
-        }
 
-        Collections.sort(configurationsUpToBound);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -209,17 +202,7 @@ public class IncrementalVerifier {
                     int num = 0;
                     for (EdgeWeightedDigraph relation : distinctRelations) {
                         List<List<Integer>> extraWords = new ArrayList<List<Integer>>();
-                        for (int len = 0; len <= explorationBound; ++len) {
-                            Set<List<Integer>> rankable = null;
-                            for (List<Integer> w : elimWords)
-                                if (w.size() == len) {
-                                    if (rankable == null)
-                                        rankable =
-                                                finiteStates.getRankableConfigs(len, winningStates, relation);
-                                    if (rankable.contains(w))
-                                        extraWords.add(w);
-                                }
-                        }
+
 
                         if (!extraWords.isEmpty()) {
                             LOGGER.debug("relation #" + num + " can rank " + extraWords);
@@ -512,18 +495,6 @@ public class IncrementalVerifier {
                 checking.addDisjBMembershipConstraint(elimWords);
                 checking.fixTransducer(relation);
 
-                // exclude words that we know cannot be ranked
-                for (int len = 0; len <= explorationBound; ++len) {
-                    final Set<List<Integer>> rankable =
-                            finiteStates.getRankableConfigs(len, winningStates, relation);
-                    for (List<Integer> w : AutomataConverter.getWords(player1Configs, len))
-                        if (!winningStates.accepts(w) &&
-                                !rankable.contains(w) &&
-                                finiteStates.isReachable(w)) {
-                            //                                LOGGER.info("excluding " + w);
-                            checking.addBNonMembershipConstraint(w);
-                        }
-                }
 
                 if (checking.findNextSolution(false)) {
                     localInvariant = checking.getSystemInvariant();

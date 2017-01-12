@@ -578,9 +578,7 @@ public class VerificationUltility {
         for (int i = 0; i < newStates.size(); ++i) {
             final IntPair state = newStates.get(i);
             if (acceptingA.contains(state.a) &&
-                    (complementB ?
-                            !acceptingB.contains(state.b) :
-                            acceptingB.contains(state.b)))
+                    (complementB != acceptingB.contains(state.b)))
                 acceptings.add(i);
         }
 
