@@ -7,8 +7,15 @@ import common.finiteautomata.AutomataConverter;
 
 import java.util.List;
 
+class NoInvariantException extends RuntimeException {
+    public NoInvariantException() {
+        super("Invariant does not exist!");
+    }
+}
+
 public class BasicRMCTeacher extends RMCTeacher {
 
+    //public static final Logger LOGGER = LogManager.getLogger();
     protected Automata relevantStates;
     protected FiniteStateSets finiteStates;
     protected int explicitExplorationDepth;
@@ -17,11 +24,16 @@ public class BasicRMCTeacher extends RMCTeacher {
         super(numLetters, I, B, T);
         this.relevantStates = AutomataConverter.getComplement(B);
         this.explicitExplorationDepth = explicitExplorationDepth;
-        this.finiteStates = new FiniteStateSets(I, T);
+        this.finiteStates = new FiniteStateSets(I, T, B);
     }
 
     public boolean isAccepted(List<Integer> word) {
-        return !getBadStates().accepts(word);
+        boolean isReachable = finiteStates.isReachable(word);
+        boolean isBad = getBadStates().accepts(word);
+        LOGGER.debug("membership query: " + word);
+        if (isReachable && isBad) throw new NoInvariantException();
+        return !isBad;
+        //return !getBadStates().accepts(word);
     }
 
     public boolean isCorrectLanguage(Automata hyp,
@@ -69,26 +81,15 @@ public class BasicRMCTeacher extends RMCTeacher {
         List<List<Integer>> xy = ic.check();
         if (xy != null) {
             LOGGER.debug("Hypothesis is not inductive: " + xy);
-            if (finiteStates.isReachable(xy.get(0)))
+            if (finiteStates.isReachable(xy.get(0))) {
+                LOGGER.debug(" => Configuration " + xy.get(1) + " should be included due to inductiveness.");
                 posCEX.add(xy.get(1));
-            else
+            } else {
+                LOGGER.debug(" => Configuration " + xy.get(0) + " is unreachable and should be excluded.");
                 negCEX.add(xy.get(0));
+            }
             return false;
         }
         return true;
-    }
-
-    /**
-     * Try to find a word that should not be accepted
-     */
-    private List<Integer> findStringNotAcceptedBy(Automata aut, int maxLen) {
-        for (int l = explicitExplorationDepth + 1; l <= maxLen; ++l) {
-            SubsetChecking s3 =
-                    new SubsetChecking(AutomataConverter.getWordAutomaton(aut, l),
-                            finiteStates.getReachableStateAutomaton(l));
-            List<Integer> w = s3.check();
-            if (w != null) return w;
-        }
-        return null;
     }
 }

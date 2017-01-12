@@ -11,17 +11,18 @@ import java.util.*;
 
 public class FiniteStateSets {
 
-    private final Logger LOGGER = LogManager.getLogger();
-    private final Automata I;
+    //private static final Logger LOGGER = LogManager.getLogger();
+    private final Automata I, B;
     private final EdgeWeightedDigraph T;
     private final Map<Integer, Set<List<Integer>>> reachableStates =
             new HashMap<Integer, Set<List<Integer>>>();
     private final Map<Integer, Automata> reachableStateAutomata =
             new HashMap<Integer, Automata>();
 
-    public FiniteStateSets(Automata I, EdgeWeightedDigraph T) {
+    public FiniteStateSets(Automata I, EdgeWeightedDigraph T, Automata B) {
         this.I = I;
         this.T = T;
+        this.B = B;
     }
 
     public Set<List<Integer>> getReachableStates(int wordLen, int numLetters) {
@@ -81,6 +82,9 @@ public class FiniteStateSets {
                 reachable = AutomataConverter.minimiseAcyclic(
                         VerificationUltility.getUnion(reachable, post));
             }
+            if (AutomataConverter.getSomeWord(VerificationUltility.getIntersection(reachable, B)) != null)
+                throw new NoInvariantException();
+
             reachableStateAutomata.put(wordLen, reachable);
         }
         return reachable;
