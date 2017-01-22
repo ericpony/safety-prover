@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="jalf">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/jalf/jalf.jar!/" />
+      <root url="file://$PROJECT_DIR$/jalf/java" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="file://$PROJECT_DIR$/jalf/java/doc" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/jalf/java/src" />
+    </SOURCES>
+  </library>
+</component>

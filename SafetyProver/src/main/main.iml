@@ -68,6 +68,6 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="java" level="project" />
+    <orderEntry type="library" name="jalf" level="project" />
   </component>
 </module>
