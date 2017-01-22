@@ -21,6 +21,7 @@ import verification.Teacher;
 import visitor.AllVisitorImpl;
 import visitor.RegularModel;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
@@ -42,10 +43,26 @@ public class Main {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("No input, doing nothing");
+            System.out.println("No input, doing nothing.");
             return;
         }
-        String fileName = args[0];
+        File in = new File(args[0]);
+        File[] modelFiles;
+        if (in.isFile()) {
+            modelFiles = new File[]{in};
+        } else if (in.isDirectory()) {
+            modelFiles = in.listFiles();
+        } else {
+            System.out.println("Input is not valid.");
+            return;
+        }
+        for (File modelFile : modelFiles) {
+            if (!modelFile.isFile()) continue;
+            checkModel(modelFile.getAbsolutePath());
+        }
+    }
+
+    static void checkModel(String fileName) {
         RegularModel problem = parse(fileName);
 
         if (problem.getLogLevel() <= 0)
