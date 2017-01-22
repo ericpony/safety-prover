@@ -5,7 +5,7 @@ import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
-import common.finiteautomata.lstar.LStar;
+import learning.*;
 import encoding.ISatSolverFactory;
 import encoding.SatSolver;
 import grammar.Yylex;
@@ -14,10 +14,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
-import verification.BasicRMCTeacher;
 import verification.IncrementalVerifier;
 import verification.MonolithicVerifier;
-import verification.Teacher;
 import visitor.AllVisitorImpl;
 import visitor.RegularModel;
 
@@ -84,9 +82,10 @@ public class Main {
         }
 
         if (problem.getPrecomputedInv()) {
+            Learner learner = new LStar();
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
                     problem.getI(), problem.getB(), problem.getT(), 5);
-            Automata invariant = LStar.inferWith(teacher);
+            Automata invariant = MonolithicLearning.inferWith(learner, teacher);
             //invariant = AutomataConverter.toMinimalDFA(invariant);
             invariant = AutomataConverter.pruneUnreachableStates(invariant);
             Map<Integer, String> indexToLabel = problem.getIndexToLabel();

@@ -1,4 +1,4 @@
-package verification;
+package main;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -7,7 +7,7 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 
-class LOGGER {
+public class LOGGER {
     private static Logger LOGGER = null;
 
     public static void setLevel(Level level) {

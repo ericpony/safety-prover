@@ -1,109 +1,27 @@
-package common.finiteautomata.lstar;
+package learning;
 
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
 import common.finiteautomata.State;
-import common.finiteautomata.language.InclusionCheckingImpl;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import verification.Teacher;
 
 import java.util.*;
 
-public class LStar {
+public class LStar extends Learner {
 
-    public static Automata inferWith(Teacher teacher) {
-        final Logger LOGGER = LogManager.getLogger();
-        LOGGER.info("Using L* to inferWith system invariant");
-        final LStar lstar = new LStar(teacher);
-        lstar.setup();
-        lstar.solve();
-        LOGGER.info("FOUND SOLUTION!");
-        LOGGER.debug(lstar.getSolution());
-        return lstar.getSolution();
-    }
-
-    // simple test for the algorithm
-    public static void main(String[] args) {
-        final Automata sol = new Automata(0, 4, 2);
-        final Set<Integer> accept = new HashSet<Integer>();
-        accept.add(3);
-        sol.setAcceptingStates(accept);
-
-        sol.addTrans(0, 0, 0);
-        sol.addTrans(1, 0, 1);
-        sol.addTrans(2, 0, 2);
-        sol.addTrans(3, 0, 3);
-
-        sol.addTrans(0, 1, 1);
-        sol.addTrans(1, 1, 2);
-        sol.addTrans(2, 1, 3);
-        sol.addTrans(3, 1, 0);
-
-        final Teacher teacher = new Teacher(2) {
-            public boolean isAccepted(List<Integer> word) {
-                System.out.println(word + " -> " + sol.accepts(word));
-                return sol.accepts(word);
-            }
-
-            public boolean isCorrectLanguage(Automata hyp,
-                                             List<List<Integer>> posCEX,
-                                             List<List<Integer>> negCEX) {
-                System.out.println();
-                System.out.println("Hypothesis:");
-                System.out.println(hyp);
-
-                InclusionCheckingImpl ic = new InclusionCheckingImpl();
-
-                List<Integer> cex = ic.findCounterExample(hyp, AutomataConverter.toCompleteDFA(sol));
-                if (cex != null) {
-                    System.out.println("negative cex: " + cex);
-                    negCEX.add(cex);
-                    return false;
-                }
-
-                cex = ic.findCounterExample(sol, AutomataConverter.toCompleteDFA(hyp));
-                if (cex != null) {
-                    System.out.println("positive cex: " + cex);
-                    posCEX.add(cex);
-                    return false;
-                }
-
-                return true;
-            }
-        };
-
-        final LStar lstar = new LStar(teacher);
-        lstar.setup();
-        lstar.solve();
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    private final int numLetters;
-    private final Teacher teacher;
-    private Automata solution = null;
-
-    private Node classTree = null;
-
+    private Automata solution;
+    private Node classTree;
     private List<List<Integer>> distWords = new ArrayList<List<Integer>>();
-
     private static final List<Integer> emptyWord = new ArrayList<Integer>();
 
-    public LStar(Teacher teacher) {
-        this.teacher = teacher;
-        this.numLetters = teacher.getNumLetters();
-    }
-
-    public void setup() {
-        solution = null;
-
+    protected void setup() {
+        final Teacher teacher = getTeacher();
+        final int numLetters = getNumLetters();
         final boolean initAccepting = teacher.isAccepted(emptyWord);
-
         final Automata hypAut = new Automata(0, 1, numLetters);
         final Set<Integer> accept = new HashSet<Integer>();
-        if (initAccepting)
-            accept.add(0);
+        solution = null;
+
+        if (initAccepting) accept.add(0);
+
         hypAut.setAcceptingStates(accept);
 
         for (int l = 0; l < numLetters; ++l)
@@ -128,10 +46,11 @@ public class LStar {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    public void solve() {
-        if (solution != null)
-            return;
+    public Automata solve() {
+        if (solution != null) return solution;
 
+        Teacher teacher = getTeacher();
+        if (teacher == null) throw new IllegalStateException("Must set teacher before calling setup().");
         final List<List<Integer>> posCEX = new ArrayList<List<Integer>>();
         final List<List<Integer>> negCEX = new ArrayList<List<Integer>>();
         final List<List<Integer>> accessWords = new ArrayList<List<Integer>>();
@@ -260,23 +179,22 @@ public class LStar {
                 cont = !teacher.isCorrectLanguage(hypAut, posCEX, negCEX);
             }
         }
-
         solution = hypAut;
+        return solution;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     private Automata extractAutomaton(List<List<Integer>> accessWords) {
-        final Map<List<Integer>, Integer> accessIndex =
-                new HashMap<List<Integer>, Integer>();
+        final Map<List<Integer>, Integer> accessIndex = new HashMap<List<Integer>, Integer>();
+        final int numLetters = getNumLetters();
 
         int i = 0;
         for (List<Integer> w : accessWords)
             accessIndex.put(w, i++);
 
-        final Automata result =
-                new Automata(accessIndex.get(emptyWord),
-                        accessWords.size(), numLetters);
+        final Automata result = new Automata(accessIndex.get(emptyWord),
+                accessWords.size(), numLetters);
         final Set<Integer> accept = new HashSet<Integer>();
 
         // add transitions and accepting states
@@ -305,10 +223,6 @@ public class LStar {
         return result;
     }
 
-    public Automata getSolution() {
-        return solution;
-    }
-
     ////////////////////////////////////////////////////////////////////////////
 
     private class Node {
@@ -331,7 +245,7 @@ public class LStar {
                 final int oldSize = w.size();
                 w.addAll(this.word);
 
-                final boolean f = teacher.isAccepted(w);
+                final boolean f = getTeacher().isAccepted(w);
 
                 while (w.size() > oldSize)
                     w.remove(w.size() - 1);

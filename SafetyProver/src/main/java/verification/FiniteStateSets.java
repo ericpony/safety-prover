@@ -4,8 +4,8 @@ import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import learning.NoInvariantException;
+import main.LOGGER;
 
 import java.util.*;
 

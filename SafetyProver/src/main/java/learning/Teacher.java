@@ -1,4 +1,4 @@
-package verification;
+package learning;
 
 import common.finiteautomata.Automata;
 

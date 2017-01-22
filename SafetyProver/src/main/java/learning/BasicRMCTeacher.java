@@ -1,17 +1,15 @@
-package verification;
+package learning;
 
 import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
+import main.LOGGER;
+import verification.FiniteStateSets;
+import verification.InductivenessChecking;
+import verification.SubsetChecking;
 
 import java.util.List;
-
-class NoInvariantException extends RuntimeException {
-    public NoInvariantException() {
-        super("Invariant does not exist!");
-    }
-}
 
 public class BasicRMCTeacher extends RMCTeacher {
 

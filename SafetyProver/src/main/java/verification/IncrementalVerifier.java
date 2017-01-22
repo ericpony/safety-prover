@@ -5,8 +5,8 @@ import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
-import common.finiteautomata.lstar.LStar;
 import encoding.ISatSolverFactory;
+import learning.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import visitor.RegularModel;
@@ -129,9 +129,10 @@ public class IncrementalVerifier {
         finiteStates = new FiniteStateSets(problem.getI(), problem.getT(), problem.getB());
 
         if (preComputeReachable) {
+            Learner learner = new LStar();
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
                     problem.getI(), problem.getB(), problem.getT(), 5);
-            systemInvariant = LStar.inferWith(teacher);
+            systemInvariant = MonolithicLearning.inferWith(learner, teacher);
         } else {
             systemInvariant = VerificationUltility.getUniversalAutomaton(problem.getNumberOfLetters());
         }
