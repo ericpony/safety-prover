@@ -5,7 +5,6 @@ import common.finiteautomata.State;
 import de.libalf.*;
 import de.libalf.jni.JNIFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -78,14 +77,13 @@ public class LibALFLearner extends Learner {
                     knowledgebase.add_knowledge(query, answer);
                 }
             } else {
-                final List<List<Integer>> posCEX = new ArrayList<List<Integer>>();
-                final List<List<Integer>> negCEX = new ArrayList<List<Integer>>();
-                if (teacher.isCorrectLanguage(toSLUPFormat(conjecture), posCEX, negCEX)) {
+                CounterExample cex = new CounterExample();
+                if (teacher.isCorrectLanguage(toSLUPFormat(conjecture), cex)) {
                     automaton = conjecture;
                 } else {
-                    List<Integer> cex = (posCEX.size() > 0 ? posCEX : negCEX).get(0);
+                    List<Integer> ex = cex.get();
                     algorithm.add_counterexample(
-                            integers2ints(cex.toArray(new Integer[cex.size()])));
+                            integers2ints(ex.toArray(new Integer[ex.size()])));
                 }
             }
         } while (automaton == null);

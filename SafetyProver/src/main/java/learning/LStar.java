@@ -27,20 +27,16 @@ public class LStar extends Learner {
         for (int l = 0; l < numLetters; ++l)
             hypAut.addTrans(0, l, 0);
 
-        final List<List<Integer>> posCEX = new ArrayList<List<Integer>>();
-        final List<List<Integer>> negCEX = new ArrayList<List<Integer>>();
+        CounterExample cex = new CounterExample();
 
-        if (teacher.isCorrectLanguage(hypAut, posCEX, negCEX)) {
+        if (teacher.isCorrectLanguage(hypAut, cex)) {
             // finished already
             solution = hypAut;
         } else {
-            classTree = new Node(emptyWord,
-                    new Node(initAccepting ?
-                            negCEX.get(0) : emptyWord,
-                            null, null),
-                    new Node(initAccepting ?
-                            emptyWord : posCEX.get(0),
-                            null, null));
+            classTree = new Node(
+                    emptyWord,
+                    new Node(initAccepting ? cex.get() : emptyWord, null, null),
+                    new Node(initAccepting ? emptyWord : cex.get(), null, null));
         }
     }
 
@@ -51,30 +47,22 @@ public class LStar extends Learner {
 
         Teacher teacher = getTeacher();
         if (teacher == null) throw new IllegalStateException("Must set teacher before calling setup().");
-        final List<List<Integer>> posCEX = new ArrayList<List<Integer>>();
-        final List<List<Integer>> negCEX = new ArrayList<List<Integer>>();
+        CounterExample cex = new CounterExample();
         final List<List<Integer>> accessWords = new ArrayList<List<Integer>>();
         classTree.collectLeafWords(accessWords);
 
-        //Automata lastHypAut = null;
         Automata hypAut = extractAutomaton(accessWords);
-        boolean cont = !teacher.isCorrectLanguage(hypAut, posCEX, negCEX);
+        boolean cont = !teacher.isCorrectLanguage(hypAut, cex);
 
         while (cont) {
-            final List<Integer> cex;
-            if (!posCEX.isEmpty())
-                cex = posCEX.get(0);
-            else
-                cex = negCEX.get(0);
-
-            // analyse the counterexample
-
+            final List<Integer> ex = cex.get();
+            // analyze the counterexampe
             int currentState = hypAut.getInitState();
             final List<Integer> prefix = new ArrayList<Integer>();
             Node lastSifted = null;
 
             int j = 0;
-            while (j <= cex.size()) {
+            while (j <= ex.size()) {
                 final Node sifted = classTree.sift(prefix);
 
                 if (!sifted.word.equals(accessWords.get(currentState))) {
@@ -93,7 +81,7 @@ public class LStar extends Learner {
                     final Node nodeB = new Node(prefix, null, null);
 
                     List<Integer> bestDistWord = new ArrayList<Integer>();
-                    bestDistWord.add(cex.get(j - 1));
+                    bestDistWord.add(ex.get(j - 1));
                     bestDistWord.addAll(distNode[0].word);
 
 //		    System.out.println("new distinguishing word: " +
@@ -147,7 +135,7 @@ public class LStar extends Learner {
 
                 lastSifted = sifted;
 
-                final int nextChar = cex.get(j++);
+                final int nextChar = ex.get(j++);
                 final State s = hypAut.getStates()[currentState];
                 final Set<Integer> nextStates = s.getDest(nextChar);
                 assert (nextStates.size() == 1);
@@ -171,12 +159,11 @@ public class LStar extends Learner {
             }
             lastHypAut = hypAut;
             */
-            if (posCEX.isEmpty() == hypAut.accepts(cex)) {
+            if (!cex.isPositive() == hypAut.accepts(ex)) {
                 // the counterexample has not been eliminated yet, try again
             } else {
-                posCEX.clear();
-                negCEX.clear();
-                cont = !teacher.isCorrectLanguage(hypAut, posCEX, negCEX);
+                cex.reset();
+                cont = !teacher.isCorrectLanguage(hypAut, cex);
             }
         }
         solution = hypAut;

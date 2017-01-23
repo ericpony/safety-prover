@@ -10,6 +10,7 @@ import common.finiteautomata.AutomataConverter;
 import elimination.CEElimination;
 import elimination.TransitivityPairSet;
 import encoding.*;
+import learning.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.sat4j.specs.ContradictionException;
@@ -150,7 +151,7 @@ public class ReachabilityChecking {
                     Automata aut = automatonB;
                     Automata complementF = AutomataConverter.getComplement(F);
                     InductivenessChecking l1 = new InductivenessChecking(aut, complementF, player2, numLetters);
-                    List<List<Integer>> xy = l1.check();
+                    Tuple<List<Integer>> xy = l1.check();
                     if (xy != null) {
                         LOGGER.debug("Invariant is not inductive! Counterexample:");
                         LOGGER.debug(xy);
@@ -381,7 +382,7 @@ public class ReachabilityChecking {
             ceElimination.ce0Elimination(automataBEncoding, ce);
         }
 
-        for (List<List<Integer>> ce : oldCounterExamples.getL1()) {
+        for (Tuple<List<Integer>> ce : oldCounterExamples.getL1()) {
             ceElimination.ce1Elimination(automataBEncoding, ce);
         }
     }

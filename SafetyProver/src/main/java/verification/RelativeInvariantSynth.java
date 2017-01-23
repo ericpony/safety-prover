@@ -7,6 +7,7 @@ import encoding.AutomataEncoding;
 import encoding.BoolValToAutomaton;
 import encoding.ISatSolver;
 import encoding.ISatSolverFactory;
+import learning.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.sat4j.specs.ContradictionException;
@@ -110,7 +111,7 @@ public class RelativeInvariantSynth {
                 InductivenessChecking s2 =
                         new InductivenessChecking(automaton, relevantStates,
                                 player1, numLetters);
-                List<List<Integer>> xy = s2.check();
+                Tuple<List<Integer>> xy = s2.check();
                 if (xy != null) {
                     LOGGER.debug("S2 failed for P1!");
                     LOGGER.debug(xy);
@@ -156,7 +157,7 @@ public class RelativeInvariantSynth {
             ceElimination.ce0Elimination(automataEncoding, ce);
         }
 
-        for (List<List<Integer>> ce : oldCounterExamples.getL1()) {
+        for (Tuple<List<Integer>> ce : oldCounterExamples.getL1()) {
             ceElimination.ce1Elimination(automataEncoding, ce);
         }
     }

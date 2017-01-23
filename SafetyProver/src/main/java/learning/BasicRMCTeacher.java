@@ -16,13 +16,11 @@ public class BasicRMCTeacher extends RMCTeacher {
     //public static final Logger LOGGER = LogManager.getLogger();
     protected Automata relevantStates;
     protected FiniteStateSets finiteStates;
-    protected int explicitExplorationDepth;
 
-    public BasicRMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T, int explicitExplorationDepth) {
+    public BasicRMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T) {
         super(numLetters, I, B, T);
-        this.relevantStates = AutomataConverter.getComplement(B);
-        this.explicitExplorationDepth = explicitExplorationDepth;
-        this.finiteStates = new FiniteStateSets(I, T, B);
+        relevantStates = AutomataConverter.getComplement(B);
+        finiteStates = new FiniteStateSets(I, T, B);
     }
 
     public boolean isAccepted(List<Integer> word) {
@@ -34,28 +32,26 @@ public class BasicRMCTeacher extends RMCTeacher {
         //return !getBadStates().accepts(word);
     }
 
-    public boolean isCorrectLanguage(Automata hyp,
-                                     List<List<Integer>> posCEX,
-                                     List<List<Integer>> negCEX) {
+    public boolean isCorrectLanguage(Automata hyp, CounterExample cex) {
         LOGGER.debug("found hypothesis, size " + hyp.getStates().length);
-        List<Integer> cex;
+        List<Integer> ex;
         SubsetChecking sc;
 
         // first test: are initial states contained?
         sc = new SubsetChecking(getInitialStates(), hyp);
-        cex = sc.check();
-        if (cex != null) {
-            LOGGER.debug("An initial configuration is not contained in hypothesis: " + cex);
-            posCEX.add(cex);
+        ex = sc.check();
+        if (ex != null) {
+            LOGGER.debug("An initial configuration is not contained in hypothesis: " + ex);
+            cex.addPositive(ex);
             return false;
         }
 
         // second test: are bad configurations excluded?
         Automata lang = VerificationUltility.getIntersection(hyp, getBadStates());
-        cex = AutomataConverter.getSomeShortestWord(lang);
-        if (cex != null) {
-            LOGGER.debug("A bad configuration is contained in hypothesis: " + cex);
-            negCEX.add(cex);
+        ex = AutomataConverter.getSomeShortestWord(lang);
+        if (ex != null) {
+            LOGGER.debug("A bad configuration is contained in hypothesis: " + ex);
+            cex.addNegative(ex);
             return false;
         }
 
@@ -76,15 +72,15 @@ public class BasicRMCTeacher extends RMCTeacher {
 
         // fourth test: is the invariant inductive?
         InductivenessChecking ic = new InductivenessChecking(hyp, relevantStates, getTransition(), getNumLetters());
-        List<List<Integer>> xy = ic.check();
+        Tuple<List<Integer>> xy = ic.check();
         if (xy != null) {
             LOGGER.debug("Hypothesis is not inductive: " + xy);
-            if (finiteStates.isReachable(xy.get(0))) {
-                LOGGER.debug(" => Configuration " + xy.get(1) + " should be included due to inductiveness.");
-                posCEX.add(xy.get(1));
+            if (finiteStates.isReachable(xy.x)) {
+                LOGGER.debug(" => Configuration " + xy.y + " should be included due to inductiveness.");
+                cex.addPositive(xy.y);
             } else {
-                LOGGER.debug(" => Configuration " + xy.get(0) + " is unreachable and should be excluded.");
-                negCEX.add(xy.get(0));
+                LOGGER.debug(" => Configuration " + xy.x + " is unreachable and should be excluded.");
+                cex.addNegative(xy.x);
             }
             return false;
         }

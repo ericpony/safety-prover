@@ -87,7 +87,7 @@ public class Main {
 //            Learner learner = new LStar();
             Learner learner = new LibALFLearner(LibALFFactory.Algorithm.ANGLUIN);
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
-                    problem.getI(), problem.getB(), problem.getT(), 5);
+                    problem.getI(), problem.getB(), problem.getT());
             Automata invariant = MonolithicLearning.inferWith(learner, teacher);
             //invariant = AutomataConverter.toMinimalDFA(invariant);
             invariant = AutomataConverter.pruneUnreachableStates(invariant);

@@ -14,7 +14,7 @@ public abstract class Teacher {
 
     abstract public boolean isAccepted(List<Integer> word);
 
-    abstract public boolean isCorrectLanguage(Automata sol, List<List<Integer>> posCEX, List<List<Integer>> negCEX);
+    abstract public boolean isCorrectLanguage(Automata sol, CounterExample cex);
 
     public final int getNumLetters() {
         return numLetters;

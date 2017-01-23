@@ -6,6 +6,7 @@ import encoding.AutomataEncoding;
 import encoding.ISatSolver;
 import encoding.RankingFunction;
 import encoding.TransducerEncoding;
+import learning.Tuple;
 import org.sat4j.specs.ContradictionException;
 
 import java.util.List;
@@ -29,15 +30,13 @@ public class CEElimination {
     }
 
     public void ce1Elimination(AutomataEncoding automataEncoding,
-                               List<List<Integer>> xy) throws ContradictionException {
-        List<Integer> x = xy.get(0);
-        List<Integer> y = xy.get(1);
+                               Tuple<List<Integer>> cex) throws ContradictionException {
         //		WordAcceptance wordXAcceptance = new WordAcceptance(automataEncoding);
         //		int acceptX = wordXAcceptance.encodeNeg(x);
         //		WordAcceptance wordYAcceptance = new WordAcceptance(automataEncoding);
         //		int acceptY = wordYAcceptance.encode(y);
-        int acceptX = automataEncoding.acceptWord(x);
-        int acceptY = automataEncoding.acceptWord(y);
+        int acceptX = automataEncoding.acceptWord(cex.x);
+        int acceptY = automataEncoding.acceptWord(cex.y);
 
         int[] clause = new int[]{-acceptX, acceptY};
         solver.addClause(clause);
@@ -69,7 +68,7 @@ public class CEElimination {
             transitivitySet.fixTransitivityCEX(counterExamples);
 
 		/*
-		PairAcceptance pairAcceptance = new PairAcceptance(transducerEncoding);
+        PairAcceptance pairAcceptance = new PairAcceptance(transducerEncoding);
 		int w1w2 = pairAcceptance.encodeNeg(w1, w2);
 		int w2w3 = pairAcceptance.encodeNeg(w2, w3);
 		int w1w3 = pairAcceptance.encodePos(w1, w3);

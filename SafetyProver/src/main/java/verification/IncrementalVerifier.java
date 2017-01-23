@@ -131,7 +131,7 @@ public class IncrementalVerifier {
         if (preComputeReachable) {
             Learner learner = new LStar();
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
-                    problem.getI(), problem.getB(), problem.getT(), 5);
+                    problem.getI(), problem.getB(), problem.getT());
             systemInvariant = MonolithicLearning.inferWith(learner, teacher);
         } else {
             systemInvariant = VerificationUltility.getUniversalAutomaton(problem.getNumberOfLetters());

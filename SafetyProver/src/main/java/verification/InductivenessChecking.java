@@ -1,20 +1,15 @@
 package verification;
 
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import common.VerificationUltility;
-import common.bellmanford.DirectedEdge;
-import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
+import learning.Tuple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.List;
 
 public class InductivenessChecking {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -23,45 +18,41 @@ public class InductivenessChecking {
     private Automata knownInv;
     private EdgeWeightedDigraph player;
     private int numLetters;
-	
+
     /**
      * Make sure that I, label starting from 1
      */
     public InductivenessChecking(Automata A,
-				 Automata knownInv,
-				 EdgeWeightedDigraph player,
-				 int numLetters){
-	this.A = A;
-	this.knownInv = knownInv;
-	this.player = player;
-	this.numLetters = numLetters;
+                                 Automata knownInv,
+                                 EdgeWeightedDigraph player,
+                                 int numLetters) {
+        this.A = A;
+        this.knownInv = knownInv;
+        this.player = player;
+        this.numLetters = numLetters;
     }
-	
-    public List<List<Integer>> check() {
-      final Automata lhs =
-          VerificationUltility.getIntersectionLazily(A, knownInv, false);
-      final Automata img =
-          VerificationUltility.getImage(lhs, player);
-      final Automata badImgPoints =
-          VerificationUltility.getIntersectionLazily(img, A, true);
-      final List<Integer> point =
-          AutomataConverter.getSomeShortestWord(badImgPoints);
 
-      if (point == null) {
-          return null;
-      } else {
-          final Automata prePoints =
-              AutomataConverter.getPreImage(point, player, numLetters);
-          final List<Integer> prePoint =
-              AutomataConverter.getSomeWord(
-              VerificationUltility.getIntersectionLazily(prePoints, lhs, false));
+    public Tuple<List<Integer>> check() {
+        final Automata lhs =
+                VerificationUltility.getIntersectionLazily(A, knownInv, false);
+        final Automata img =
+                VerificationUltility.getImage(lhs, player);
+        final Automata badImgPoints =
+                VerificationUltility.getIntersectionLazily(img, A, true);
+        final List<Integer> point =
+                AutomataConverter.getSomeShortestWord(badImgPoints);
 
-          List<List<Integer>> result = new ArrayList<List<Integer>>();
-          result.add(prePoint);
-          result.add(point);
-          
-          return result;
-      }
+        if (point == null) {
+            return null;
+        } else {
+            final Automata prePoints =
+                    AutomataConverter.getPreImage(point, player, numLetters);
+            final List<Integer> prePoint =
+                    AutomataConverter.getSomeWord(
+                            VerificationUltility.getIntersectionLazily(prePoints, lhs, false));
+
+            return new Tuple(prePoint, point);
+        }
     }
 
     /**

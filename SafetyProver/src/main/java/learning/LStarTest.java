@@ -32,26 +32,24 @@ public class LStarTest {
                 return sol.accepts(word);
             }
 
-            public boolean isCorrectLanguage(Automata hyp,
-                                             List<List<Integer>> posCEX,
-                                             List<List<Integer>> negCEX) {
+            public boolean isCorrectLanguage(Automata hyp, CounterExample cex) {
                 System.out.println();
                 System.out.println("Hypothesis:");
                 System.out.println(hyp);
 
                 InclusionCheckingImpl ic = new InclusionCheckingImpl();
 
-                List<Integer> cex = ic.findCounterExample(hyp, AutomataConverter.toCompleteDFA(sol));
-                if (cex != null) {
-                    System.out.println("negative cex: " + cex);
-                    negCEX.add(cex);
+                List<Integer> ex = ic.findCounterExample(hyp, AutomataConverter.toCompleteDFA(sol));
+                if (ex != null) {
+                    System.out.println("negative cex: " + ex);
+                    cex.addNegative(ex);
                     return false;
                 }
 
-                cex = ic.findCounterExample(sol, AutomataConverter.toCompleteDFA(hyp));
-                if (cex != null) {
-                    System.out.println("positive cex: " + cex);
-                    posCEX.add(cex);
+                ex = ic.findCounterExample(sol, AutomataConverter.toCompleteDFA(hyp));
+                if (ex != null) {
+                    System.out.println("positive cex: " + ex);
+                    cex.addPositive(ex);
                     return false;
                 }
 
