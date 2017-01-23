@@ -5,11 +5,12 @@ import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
-import learning.*;
+import de.libalf.LibALFFactory;
 import encoding.ISatSolverFactory;
 import encoding.SatSolver;
 import grammar.Yylex;
 import grammar.parser;
+import learning.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,6 +57,7 @@ public class Main {
         }
         for (File modelFile : modelFiles) {
             if (!modelFile.isFile()) continue;
+            System.out.println("Checking " + modelFile.getName() + "...");
             checkModel(modelFile.getAbsolutePath());
         }
     }
@@ -82,7 +84,8 @@ public class Main {
         }
 
         if (problem.getPrecomputedInv()) {
-            Learner learner = new LStar();
+//            Learner learner = new LStar();
+            Learner learner = new LibALFLearner(LibALFFactory.Algorithm.ANGLUIN);
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
                     problem.getI(), problem.getB(), problem.getT(), 5);
             Automata invariant = MonolithicLearning.inferWith(learner, teacher);
