@@ -1,0 +1,82 @@
+// bakery.txt
+// We model this protocol as described in Nilsson's thesis
+// (see http://www.nilsson.tv/papers/thesis_finalversion.pdf):
+//
+// A - ticket is available
+// W - some process with this ticket is waiting
+// C - some process with this ticket is in critical
+
+// at least two processes at beginning
+Initial {
+    init: s0;
+
+    s0 -> s1 A;
+    s1 -> s2 A;
+    s2 -> s2 A;
+
+    accepting: s2;
+}
+
+closedUnderTransitions;
+
+Transition {
+    init: s0;
+
+    s0 -> t0;
+
+    // first entrance into the CS
+    t0 -> t3 A/C;
+    t3 -> t3 A/A;
+
+    s0 -> t1;
+
+    // someone requests for a ticket
+    t1 -> t1 A/A;
+    t1 -> t2 C/C;
+    t2 -> t2 W/W;
+    t2 -> t3 A/W;
+
+    s0 -> r1;
+
+    // someone leaves the CS
+    r1 -> r1 A/A;
+    r1 -> r3 C/A;
+
+    s0 -> r2;
+
+    // someone enters the CS
+    r2 -> r2 A/A;
+    r2 -> r3 W/C;
+
+    s0 -> r3;
+
+    // idle
+    r3 -> r3 A/A;
+    r3 -> r3 W/W;
+    r3 -> r3 C/C;
+
+    accepting: t3, r3;
+}
+
+// two processes in the CS
+Bad {
+    init: s0;
+
+    s0 -> s0 W;
+    s0 -> s0 A;
+    s0 -> s1 C;
+    s1 -> s1 W;
+    s1 -> s1 A;
+    s1 -> s2 C;
+    s2 -> s2 W;
+    s2 -> s2 A;
+    s2 -> s2 C;
+
+    accepting: s2;
+}
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 10;
+automatonStateGuessing: 0 .. 4;
+
