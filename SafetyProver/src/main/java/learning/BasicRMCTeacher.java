@@ -26,10 +26,13 @@ public class BasicRMCTeacher extends RMCTeacher {
     public boolean isAccepted(List<Integer> word) {
         boolean isReachable = finiteStates.isReachable(word);
         boolean isBad = getBadStates().accepts(word);
-        LOGGER.debug("membership query: " + word);
-        if (isReachable && isBad) throw new NoInvariantException();
-        return !isBad;
-        //return !getBadStates().accepts(word);
+        if (isReachable && isBad) {
+            LOGGER.debug("membership query: " + word);
+            throw new NoInvariantException();
+        }
+        boolean accepted = isReachable && !isBad;
+        LOGGER.debug("membership query: " + word + " -> " + (accepted ? "accepted" : "rejected"));
+        return accepted;
     }
 
     public boolean isCorrectLanguage(Automata hyp, CounterExample cex) {
