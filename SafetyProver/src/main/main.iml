@@ -5,11 +5,12 @@
     <content url="file://$MODULE_DIR$/../../../Common/src">
       <sourceFolder url="file://$MODULE_DIR$/../../../Common/src/main/java" isTestSource="false" />
     </content>
+    <content url="file://$MODULE_DIR$/../../benchmarks">
+      <sourceFolder url="file://$MODULE_DIR$/../../benchmarks" isTestSource="false" />
+    </content>
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/java" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/java/JLex" />
-      <excludeFolder url="file://$MODULE_DIR$/java/grammar2" />
-      <excludeFolder url="file://$MODULE_DIR$/java/grammar_" />
       <excludeFolder url="file://$MODULE_DIR$/java/java_cup" />
     </content>
     <orderEntry type="inheritedJdk" />

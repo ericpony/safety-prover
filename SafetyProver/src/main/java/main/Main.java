@@ -57,8 +57,10 @@ public class Main {
         }
         for (File modelFile : modelFiles) {
             if (!modelFile.isFile()) continue;
+            if (modelFile.getName().charAt(0) == '_') continue;
             System.out.println("Checking " + modelFile.getName() + "...");
             checkModel(modelFile.getAbsolutePath());
+            break;
         }
     }
 

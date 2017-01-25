@@ -4,6 +4,8 @@ import common.VerificationUltility;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
+import de.libalf.BasicAutomaton;
+import de.libalf.BasicTransition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -732,4 +734,48 @@ public class AutomataConverter {
         return result;
     }
 
+    public static BasicAutomaton SLRP2Alf(Automata from) {
+        BasicAutomaton to = new BasicAutomaton(from.isDFA(), from.getNumStates(), from.getNumLabels());
+        to.addInitialState(from.getInitState());
+        for (int state : from.getAcceptingStates()) {
+            to.addFinalState(state);
+        }
+        for (State source : from.getStates()) {
+            for (Integer label : source.getOutgoingLabels()) {
+                for (Integer dest : source.getDest(label)) {
+                    to.addTransition(new BasicTransition(source.getId(), label, dest));
+                }
+            }
+        }
+        return to;
+    }
+
+    public static Automata Alf2SLRP(BasicAutomaton from) {
+        Set<Integer> init = from.getInitialStates();
+        Automata to;
+        if (init.size() > 1) {
+            int initState = from.getNumberOfStates();
+            to = new Automata(
+                    initState,
+                    from.getNumberOfStates() + 1,
+                    from.getAlphabetSize());
+            for (BasicTransition t : from.getTransitions()) {
+                to.addTrans(t.source, t.label, t.destination);
+            }
+            to.setAcceptingStates(from.getFinalStates());
+            Iterator<Integer> it = init.iterator();
+            while (it.hasNext()) to.addTrans(initState, Automata.EPSILON_LABEL, it.next());
+        } else {
+            int initState = init.iterator().next();
+            to = new Automata(
+                    initState,
+                    from.getNumberOfStates(),
+                    from.getAlphabetSize());
+            for (BasicTransition t : from.getTransitions()) {
+                to.addTrans(t.source, t.label, t.destination);
+            }
+            to.setAcceptingStates(from.getFinalStates());
+        }
+        return to;
+    }
 }

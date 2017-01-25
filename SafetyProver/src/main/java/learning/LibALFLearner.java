@@ -1,12 +1,14 @@
 package learning;
 
 import common.finiteautomata.Automata;
-import common.finiteautomata.State;
-import de.libalf.*;
+import common.finiteautomata.AutomataConverter;
+import de.libalf.BasicAutomaton;
+import de.libalf.Knowledgebase;
+import de.libalf.LearningAlgorithm;
+import de.libalf.LibALFFactory;
 import de.libalf.jni.JNIFactory;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -78,7 +80,7 @@ public class LibALFLearner extends Learner {
                 }
             } else {
                 CounterExample cex = new CounterExample();
-                if (teacher.isCorrectLanguage(toSLUPFormat(conjecture), cex)) {
+                if (teacher.isCorrectLanguage(AutomataConverter.Alf2SLRP(conjecture), cex)) {
                     automaton = conjecture;
                 } else {
                     List<Integer> ex = cex.get();
@@ -89,39 +91,7 @@ public class LibALFLearner extends Learner {
         } while (automaton == null);
         // Present result
         //System.out.println("\nResult:\n\n" + automaton.toDot());
-        return toSLUPFormat(automaton);
-    }
-
-    private BasicAutomaton toALFFormat(Automata from) {
-        BasicAutomaton to = new BasicAutomaton(from.isDFA(), from.getNumStates(), from.getNumLabels());
-        to.addInitialState(from.getInitState());
-        for (int state : from.getAcceptingStates()) {
-            to.addFinalState(state);
-        }
-        for (State source : from.getStates()) {
-            for (Integer label : source.getOutgoingLabels()) {
-                for (Integer dest : source.getDest(label)) {
-                    to.addTransition(new BasicTransition(source.getId(), label, dest));
-                }
-            }
-        }
-        return to;
-    }
-
-    private Automata toSLUPFormat(BasicAutomaton from) {
-        Iterator<Integer> it = from.getInitialStates().iterator();
-        int initState = it.next();
-        if (it.hasNext()) throw new IllegalStateException("More than one initial state!");
-
-        Automata to = new Automata(
-                initState,
-                from.getNumberOfStates(),
-                from.getAlphabetSize());
-        for (BasicTransition t : from.getTransitions()) {
-            to.addTrans(t.source, t.label, t.destination);
-        }
-        to.setAcceptingStates(from.getFinalStates());
-        return to;
+        return AutomataConverter.Alf2SLRP(automaton);
     }
 
     private Integer[] ints2Integers(int[] ints) {
