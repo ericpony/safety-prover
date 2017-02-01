@@ -33,17 +33,17 @@ public class L2TransducerComposition {
 		}
 		
 		//set init
-		result.setInitState(VerificationUltility.hash(graph.getInitState(), graph.getInitState(), numStates));
+		result.setSourceVertex(VerificationUltility.hash(graph.getSourceVertex(), graph.getSourceVertex(), numStates));
 		
 		//set accepting states
 		Set<Integer> acceptings = new HashSet<Integer>();
-		for(int accept1: graph.getAcceptingStates()){
-			for(int accept2: graph.getAcceptingStates()){
+		for(int accept1: graph.getDestVertices()){
+			for(int accept2: graph.getDestVertices()){
 				acceptings.add(VerificationUltility.hash(accept1, accept2, numStates));
 			}
 		}
 		
-		result.setAcceptingStates(acceptings);
+		result.setDestVertices(acceptings);
 		return result;
 	}
 	

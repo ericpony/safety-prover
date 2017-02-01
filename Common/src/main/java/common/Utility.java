@@ -32,7 +32,7 @@ public class Utility {
         result.append(NEW_LINE);
         result.append("node [shape = doublecircle]; ");
 
-        for (int accepting : automata.getAcceptingStates()) {
+        for (int accepting : automata.getAcceptingStateIds()) {
             result.append(accepting);
             result.append(SPACE);
         }
@@ -44,7 +44,7 @@ public class Utility {
         for (State state : automata.getStates()) {
             for (int i = Automata.EPSILON_LABEL; i < automata.getNumLabels(); i++) {
                 String label = (i == Automata.EPSILON_LABEL) ? "" : String.valueOf(getLabel(transducerLabelToIndex, i));
-                Set<Integer> nexts = state.getDest(i);
+                Set<Integer> nexts = state.getDestIds(i);
                 for (Integer next : nexts) {
                     result.append(state.getId() + " -> " + next + " [ label = \"" + label + "\" ];");
                     result.append(NEW_LINE);
@@ -55,7 +55,7 @@ public class Utility {
         // denote the initial state (special value for the beginning of input arrow)
         result.append(DOT_INIT_NODE_NUM + "[shape = point ];");
         result.append(NEW_LINE);
-        result.append(DOT_INIT_NODE_NUM + " -> " + automata.getInitState() + ";");
+        result.append(DOT_INIT_NODE_NUM + " -> " + automata.getInitStateId() + ";");
         result.append(NEW_LINE);
 
         result.append("}");
@@ -75,7 +75,7 @@ public class Utility {
         result.append("size=\"8,5\"");
         result.append(NEW_LINE);
         result.append("node [shape = doublecircle]; ");
-        for (int accepting : transducer.getAcceptingStates()) {
+        for (int accepting : transducer.getDestVertices()) {
             result.append(accepting);
             result.append(SPACE);
         }
@@ -103,7 +103,7 @@ public class Utility {
         // denote the initial state (special value for the beginning of input arrow)
         result.append(DOT_INIT_NODE_NUM + " [shape = point ];");
         result.append(NEW_LINE);
-        result.append(DOT_INIT_NODE_NUM + " -> " + transducer.getInitState() + ";");
+        result.append(DOT_INIT_NODE_NUM + " -> " + transducer.getSourceVertex() + ";");
         result.append(NEW_LINE);
 
         result.append("}");

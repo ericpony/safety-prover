@@ -99,20 +99,20 @@ public class ProgressChecking {
                 new EdgeWeightedDigraph(numStatesB *
                         numStatesComplementF * numStatesComplementF *
                         numStatesPlayer1);
-        result.setInitState(VerificationUltility.hash(invariant.getInitState(),
-                complementF.getInitState(),
-                complementF.getInitState(),
-                player1.getInitState(),
+        result.setSourceVertex(VerificationUltility.hash(invariant.getInitStateId(),
+                complementF.getInitStateId(),
+                complementF.getInitStateId(),
+                player1.getSourceVertex(),
                 numStatesB,
                 numStatesComplementF,
                 numStatesComplementF));
 
         //set accepting
         Set<Integer> acceptings = new HashSet<Integer>();
-        for (int acceptB : invariant.getAcceptingStates()) {
-            for (int acceptComplementFx : complementF.getAcceptingStates()) {
-                for (int acceptComplementFy : complementF.getAcceptingStates()) {
-                    for (int acceptPlayer1 : player1.getAcceptingStates()) {
+        for (int acceptB : invariant.getAcceptingStateIds()) {
+            for (int acceptComplementFx : complementF.getAcceptingStateIds()) {
+                for (int acceptComplementFy : complementF.getAcceptingStateIds()) {
+                    for (int acceptPlayer1 : player1.getDestVertices()) {
                         acceptings.add(VerificationUltility.hash(acceptB,
                                 acceptComplementFx,
                                 acceptComplementFy,
@@ -124,7 +124,7 @@ public class ProgressChecking {
                 }
             }
         }
-        result.setAcceptingStates(acceptings);
+        result.setDestVertices(acceptings);
 
 
         List<DirectedEdgeWithInputOutput> edgesB = VerificationUltility.getEdges(invariant);
@@ -177,17 +177,17 @@ public class ProgressChecking {
 
         EdgeWeightedDigraph result =
                 new EdgeWeightedDigraph(numStatesB * numStatesPlayer2 * numStatesTransducer);
-        result.setInitState(VerificationUltility.hash(B.getInitState(),
-                player2.getInitState(),
-                guessingTransducer.getInitState(),
+        result.setSourceVertex(VerificationUltility.hash(B.getInitStateId(),
+                player2.getSourceVertex(),
+                guessingTransducer.getSourceVertex(),
                 numStatesB,
                 numStatesPlayer2));
 
         // set accepting
         Set<Integer> acceptings = new HashSet<Integer>();
-        for (int acceptB : B.getAcceptingStates()) {
-            for (int acceptPlayer2 : player2.getAcceptingStates()) {
-                for (int acceptTransducer : guessingTransducer.getAcceptingStates()) {
+        for (int acceptB : B.getAcceptingStateIds()) {
+            for (int acceptPlayer2 : player2.getDestVertices()) {
+                for (int acceptTransducer : guessingTransducer.getDestVertices()) {
                     acceptings.add(VerificationUltility.hash(acceptB,
                             acceptPlayer2,
                             acceptTransducer,
@@ -196,7 +196,7 @@ public class ProgressChecking {
                 }
             }
         }
-        result.setAcceptingStates(acceptings);
+        result.setDestVertices(acceptings);
 
         for (DirectedEdgeWithInputOutput edgeB : edgesB) {
             for (DirectedEdge edge2 : player2.edges()) {
@@ -248,15 +248,15 @@ public class ProgressChecking {
 
         // get accepting states
         final Set<Integer> acceptingStatesBx =
-                Bx.getAcceptingStates();
+                Bx.getAcceptingStateIds();
         final Set<Integer> acceptingStatesNFx =
-                complementFx.getAcceptingStates();
+                complementFx.getAcceptingStateIds();
         final Set<Integer> acceptingStatesNFy =
-                complementFy.getAcceptingStates();
+                complementFy.getAcceptingStateIds();
         final Set<Integer> acceptingStatesX2Y =
-                x2y.getAcceptingStates();
+                x2y.getDestVertices();
         final Set<Integer> acceptingStates2 =
-                dfa2.getAcceptingStates();
+                dfa2.getDestVertices();
 
         // dfa2 might be incomplete, therefore add a
         // special non-accepting looping state
@@ -271,11 +271,11 @@ public class ProgressChecking {
         final Deque<List<int[]>> paths = new ArrayDeque<List<int[]>>();
 
         final IntTuple initState =
-                new IntTuple(Bx.getInitState(),
-                        complementFx.getInitState(),
-                        complementFy.getInitState(),
-                        x2y.getInitState(),
-                        dfa2.getInitState());
+                new IntTuple(Bx.getInitStateId(),
+                        complementFx.getInitStateId(),
+                        complementFy.getInitStateId(),
+                        x2y.getSourceVertex(),
+                        dfa2.getSourceVertex());
         working.add(initState);
 
         if (acceptingStatesBx.contains(initState.s1) &&
@@ -314,21 +314,21 @@ public class ProgressChecking {
                 final int x2yDest = x2yEdge.to();
 
                 final Set<Integer> BxDests =
-                        Bx.getStates()[currentState.s1].getDest(charX);
+                        Bx.getStates()[currentState.s1].getDestIds(charX);
                 if (BxDests.isEmpty())
                     continue;
                 assert (BxDests.size() == 1);
                 final int BxDest = BxDests.iterator().next();
 
                 final Set<Integer> NFxDests =
-                        complementFx.getStates()[currentState.s2].getDest(charX);
+                        complementFx.getStates()[currentState.s2].getDestIds(charX);
                 if (NFxDests.isEmpty())
                     continue;
                 assert (NFxDests.size() == 1);
                 final int NFxDest = NFxDests.iterator().next();
 
                 final Set<Integer> NFyDests =
-                        complementFy.getStates()[currentState.s3].getDest(charY);
+                        complementFy.getStates()[currentState.s3].getDestIds(charY);
                 if (NFyDests.isEmpty())
                     continue;
                 assert (NFyDests.size() == 1);

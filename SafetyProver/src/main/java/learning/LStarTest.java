@@ -14,7 +14,7 @@ public class LStarTest {
         final Automata sol = new Automata(0, 4, 2);
         final Set<Integer> accept = new HashSet<Integer>();
         accept.add(3);
-        sol.setAcceptingStates(accept);
+        sol.setAcceptingStateIds(accept);
 
         sol.addTrans(0, 0, 0);
         sol.addTrans(1, 0, 1);

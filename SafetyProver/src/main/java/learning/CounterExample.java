@@ -11,12 +11,12 @@ public class CounterExample {
     private Set<List<Integer>> history = null;
 
     public CounterExample() {
-        this(true);
+        this(0);
     }
 
-    public CounterExample(boolean recordCexs) {
-        if (recordCexs)
-            history = new HashSet<List<Integer>>(100);
+    public CounterExample(int historySize) {
+        if (historySize > 0)
+            history = new HashSet<List<Integer>>(historySize);
     }
 
     public void addNegative(List<Integer> ex) {

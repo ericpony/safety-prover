@@ -83,7 +83,7 @@ public class CE4Elimination {
 
         // check how big the z language is
 
-        if (zLanguage.getAcceptingStates().isEmpty()) {
+        if (zLanguage.getAcceptingStateIds().isEmpty()) {
             solver.addClause(new int[]{-Bx});
         } else {
             // is the z language small?
@@ -167,7 +167,7 @@ public class CE4Elimination {
         State[] zStates = zLanguage.getStates();
         int[] zDepth = new int[zLangStateNum];
         Arrays.fill(zDepth, -1);
-        zDepth[zLanguage.getInitState()] = 0;
+        zDepth[zLanguage.getInitStateId()] = 0;
         boolean changed = true;
         while (changed) {
             changed = false;
@@ -175,7 +175,7 @@ public class CE4Elimination {
                 if (zDepth[i] >= 0) {
                     int depth = zDepth[i];
                     State state = zStates[i];
-                    for (int j : state.getDest())
+                    for (int j : state.getDestIds())
                         if (zDepth[j] == -1) {
                             zDepth[j] = depth + 1;
                             changed = true;
@@ -203,7 +203,7 @@ public class CE4Elimination {
         // only accepting final states are selected
         for (int s1 = 0; s1 < zLangStateNum; ++s1)
             if (zDepth[s1] == ceY.size() &&
-                    !zLanguage.getAcceptingStates().contains(s1))
+                    !zLanguage.getAcceptingStateIds().contains(s1))
                 solver.addClause(new int[]{-getZLangVar(s1)});
 
         // whenever two consecutive states are selected in the z
@@ -214,14 +214,14 @@ public class CE4Elimination {
                     State state = zStates[s1];
                     int transNum = 0;
                     for (int i = 0; i < numLetters; ++i)
-                        if (state.getDest(i).contains(s2))
+                        if (state.getDestIds(i).contains(s2))
                             ++transNum;
                     int[] clause = new int[transNum + 2];
                     clause[0] = -getZLangVar(s1);
                     clause[1] = -getZLangVar(s2);
                     int j = 2;
                     for (int i = 0; i < numLetters; ++i)
-                        if (state.getDest(i).contains(s2))
+                        if (state.getDestIds(i).contains(s2))
                             clause[j++] = getZWordVar(zDepth[s1], i);
                     solver.addClause(clause);
                 }

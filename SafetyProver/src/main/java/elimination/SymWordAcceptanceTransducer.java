@@ -1,8 +1,6 @@
 package elimination;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.sat4j.specs.ContradictionException;
 
@@ -47,11 +45,11 @@ public class SymWordAcceptanceTransducer {
         }
         
         // initial states
-        solver.addClause(new int[] { getStateVar(0, transducer.getInitState()) });
+        solver.addClause(new int[] { getStateVar(0, transducer.getSourceVertex()) });
 
         // final states
         for (int state = 0; state < autNumStates; ++state)
-            if (!transducer.getAcceptingStates().contains(state))
+            if (!transducer.getDestVertices().contains(state))
                 solver.addClause(new int[] { -getStateVar(wordLen, state) });
 
         // transitions

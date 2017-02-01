@@ -17,7 +17,7 @@ public class DotGraphiczUltility {
 		result.append(NEW_LINE);
 		result.append("node [shape = doublecircle]; ");
 		
-		for(int accepting: automata.getAcceptingStates()){
+		for(int accepting: automata.getAcceptingStateIds()){
 			result.append(accepting);
 			result.append(SPACE);
 		}
@@ -29,7 +29,7 @@ public class DotGraphiczUltility {
 		for(State state: automata.getStates()){
 			for(int i = Automata.EPSILON_LABEL; i < automata.getNumLabels(); i++){
 				String label = (i == Automata.EPSILON_LABEL)? "": String.valueOf(i);
-				Set<Integer> nexts = state.getDest(i);
+				Set<Integer> nexts = state.getDestIds(i);
 				for(Integer next: nexts){
 					result.append(state.getId() + " -> " + next + " [ label = \"" + label + "\" ];");
 					result.append(NEW_LINE);

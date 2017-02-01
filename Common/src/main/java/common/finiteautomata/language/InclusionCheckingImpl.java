@@ -15,8 +15,8 @@ public class InclusionCheckingImpl implements InclusionChecking {
 	 */
 	public boolean isSubSet(Automata automata1, Automata completeDFA2) {
 		// get accepting states
-		Set<Integer> acceptingStates1 = automata1.getAcceptingStates();
-		Set<Integer> acceptingStates2 = completeDFA2.getAcceptingStates();
+		Set<Integer> acceptingStates1 = automata1.getAcceptingStateIds();
+		Set<Integer> acceptingStates2 = completeDFA2.getAcceptingStateIds();
 
 		int NUM_STATE2 = completeDFA2.getStates().length;
 
@@ -24,16 +24,16 @@ public class InclusionCheckingImpl implements InclusionChecking {
 		// store nodes waiting to visit
 		Stack<Integer> working1 = new Stack<Integer>();
 		Stack<Integer> working2 = new Stack<Integer>();
-		Set<Integer> initClosure1 = automata1.getEpsilonClosure(automata1.getInitState());
+		Set<Integer> initClosure1 = automata1.getEpsilonClosure(automata1.getInitStateId());
 		for(int init1: initClosure1){
 			working1.push(init1);
-			working2.push(completeDFA2.getInitState());
+			working2.push(completeDFA2.getInitStateId());
 		}
 
 		// check whether a node is visited or not
 		boolean[] isVisited = new boolean[automata1.getStates().length
 				* NUM_STATE2];
-		int hashInit = hash(automata1.getInitState(), completeDFA2.getInitState(),
+		int hashInit = hash(automata1.getInitStateId(), completeDFA2.getInitStateId(),
 				NUM_STATE2);
 		isVisited[hashInit] = true;
 		while (!working2.isEmpty()) {
@@ -50,8 +50,8 @@ public class InclusionCheckingImpl implements InclusionChecking {
 			State state1 = automata1.getStates()[currentState1];
 			State state2 = completeDFA2.getStates()[currentState2];
 			for(int nextLabel = 0; nextLabel < automata1.getNumLabels(); nextLabel++){
-				Set<Integer> dests1 = automata1.getEpsilonClosure(state1.getDest(nextLabel));
-				Set<Integer> dests2 = state2.getDest(nextLabel);
+				Set<Integer> dests1 = automata1.getEpsilonClosure(state1.getDestIds(nextLabel));
+				Set<Integer> dests2 = state2.getDestIds(nextLabel);
 
 				for (int dest1 : dests1) {
 					for (int dest2 : dests2) {
@@ -80,8 +80,8 @@ public class InclusionCheckingImpl implements InclusionChecking {
 	 */
 	public List<Integer> findCounterExample(Automata automata1, Automata completeDFA2) {
 		// get accepting states
-		Set<Integer> acceptingStates1 = automata1.getAcceptingStates();
-		Set<Integer> acceptingStates2 = completeDFA2.getAcceptingStates();
+		Set<Integer> acceptingStates1 = automata1.getAcceptingStateIds();
+		Set<Integer> acceptingStates2 = completeDFA2.getAcceptingStateIds();
 
 		int NUM_STATE2 = completeDFA2.getStates().length;
 
@@ -102,10 +102,10 @@ public class InclusionCheckingImpl implements InclusionChecking {
 		// for each node in workingStates, store its depth level
 		Stack<Integer> depthStack = new Stack<Integer>();
 		
-		Set<Integer> initClosure1 = automata1.getEpsilonClosure(automata1.getInitState());
+		Set<Integer> initClosure1 = automata1.getEpsilonClosure(automata1.getInitStateId());
 		for(int init1: initClosure1){
 			working1.push(init1);
-			working2.push(completeDFA2.getInitState());
+			working2.push(completeDFA2.getInitStateId());
 			labels.push(DUMMY_LABEL);
 			depthStack.push(0);
 		}
@@ -113,7 +113,7 @@ public class InclusionCheckingImpl implements InclusionChecking {
 		// check whether a node is visited or not
 		boolean[] isVisited = new boolean[automata1.getStates().length
 				* NUM_STATE2];
-		int hashInit = hash(automata1.getInitState(), completeDFA2.getInitState(),
+		int hashInit = hash(automata1.getInitStateId(), completeDFA2.getInitStateId(),
 				NUM_STATE2);
 		isVisited[hashInit] = true;
 		while (!working2.isEmpty()) {
@@ -150,8 +150,8 @@ public class InclusionCheckingImpl implements InclusionChecking {
 			State state1 = automata1.getStates()[currentState1];
 			State state2 = completeDFA2.getStates()[currentState2];
 			for(int nextLabel = 0; nextLabel < automata1.getNumLabels(); nextLabel++){
-				Set<Integer> dests1 = automata1.getEpsilonClosure(state1.getDest(nextLabel));
-				Set<Integer> dests2 = state2.getDest(nextLabel);
+				Set<Integer> dests1 = automata1.getEpsilonClosure(state1.getDestIds(nextLabel));
+				Set<Integer> dests2 = state2.getDestIds(nextLabel);
 
 				for (int dest1 : dests1) {
 					for (int dest2 : dests2) {
@@ -175,8 +175,8 @@ public class InclusionCheckingImpl implements InclusionChecking {
 
 	public List<Integer> findShortestCounterExample(Automata automata1, Automata completeDFA2){
 		// get accepting states
-		Set<Integer> acceptingStates1 = automata1.getAcceptingStates();
-		Set<Integer> acceptingStates2 = completeDFA2.getAcceptingStates();
+		Set<Integer> acceptingStates1 = automata1.getAcceptingStateIds();
+		Set<Integer> acceptingStates2 = completeDFA2.getAcceptingStateIds();
 
 		int NUM_STATE2 = completeDFA2.getStates().length;
 		
@@ -187,17 +187,17 @@ public class InclusionCheckingImpl implements InclusionChecking {
         //for each state, store the path from root to it
         List<List<Integer>> paths = new ArrayList<List<Integer>>();
         
-		Set<Integer> initClosure1 = automata1.getEpsilonClosure(automata1.getInitState());
+		Set<Integer> initClosure1 = automata1.getEpsilonClosure(automata1.getInitStateId());
 		for(int init1: initClosure1){
 			working1.add(init1);
-			working2.add(completeDFA2.getInitState());
+			working2.add(completeDFA2.getInitStateId());
 			 //add path to init
 	        paths.add(new ArrayList<Integer>());
 		}
 		
 		// check whether a node is visited or not
 		boolean[] isVisited = new boolean[automata1.getStates().length * NUM_STATE2];
-		int hashInit = hash(automata1.getInitState(), completeDFA2.getInitState(), NUM_STATE2);
+		int hashInit = hash(automata1.getInitStateId(), completeDFA2.getInitStateId(), NUM_STATE2);
 		isVisited[hashInit] = true;
 		while (!working2.isEmpty()) {
         	int currentState1 = working1.remove(0);
@@ -214,8 +214,8 @@ public class InclusionCheckingImpl implements InclusionChecking {
 			State state1 = automata1.getStates()[currentState1];
 			State state2 = completeDFA2.getStates()[currentState2];
 			for(int nextLabel = 0; nextLabel < automata1.getNumLabels(); nextLabel++){
-				Set<Integer> dests1 = automata1.getEpsilonClosure(state1.getDest(nextLabel));
-				Set<Integer> dests2 = state2.getDest(nextLabel);
+				Set<Integer> dests1 = automata1.getEpsilonClosure(state1.getDestIds(nextLabel));
+				Set<Integer> dests2 = state2.getDestIds(nextLabel);
 
 				for (int dest1 : dests1) {
 					for (int dest2 : dests2) {

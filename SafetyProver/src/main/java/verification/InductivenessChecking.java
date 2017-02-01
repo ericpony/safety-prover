@@ -14,7 +14,7 @@ import java.util.List;
 public class InductivenessChecking {
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private Automata A;
+    private Automata aut;
     private Automata knownInv;
     private EdgeWeightedDigraph player;
     private int numLetters;
@@ -22,25 +22,21 @@ public class InductivenessChecking {
     /**
      * Make sure that I, label starting from 1
      */
-    public InductivenessChecking(Automata A,
+    public InductivenessChecking(Automata aut,
                                  Automata knownInv,
                                  EdgeWeightedDigraph player,
                                  int numLetters) {
-        this.A = A;
+        this.aut = aut;
         this.knownInv = knownInv;
         this.player = player;
         this.numLetters = numLetters;
     }
 
     public Tuple<List<Integer>> check() {
-        final Automata lhs =
-                VerificationUltility.getIntersectionLazily(A, knownInv, false);
-        final Automata img =
-                VerificationUltility.getImage(lhs, player);
-        final Automata badImgPoints =
-                VerificationUltility.getIntersectionLazily(img, A, true);
-        final List<Integer> point =
-                AutomataConverter.getSomeShortestWord(badImgPoints);
+        final Automata lhs = VerificationUltility.getIntersectionLazily(aut, knownInv);
+        final Automata img = VerificationUltility.getImage(lhs, player);
+        final Automata badImgPoints = VerificationUltility.getDifference(img, aut);
+        final List<Integer> point = AutomataConverter.getSomeShortestWord(badImgPoints);
 
         if (point == null) {
             return null;
@@ -49,9 +45,9 @@ public class InductivenessChecking {
                     AutomataConverter.getPreImage(point, player, numLetters);
             final List<Integer> prePoint =
                     AutomataConverter.getSomeWord(
-                            VerificationUltility.getIntersectionLazily(prePoints, lhs, false));
+                            VerificationUltility.getIntersectionLazily(prePoints, lhs));
 
-            return new Tuple(prePoint, point);
+            return new Tuple<List<Integer>>(prePoint, point);
         }
     }
 
@@ -71,20 +67,20 @@ public class InductivenessChecking {
 	EdgeWeightedDigraph product =
 	    new EdgeWeightedDigraph(numStatesA * numStatesPlayer *
 				    numStatesCA * numStatesKI);
-	product.setInitState(VerificationUltility.hash(A.getInitState(),
-						       T.getInitState(),
-						       complementA.getInitState(),
-						       knownInv.getInitState(),
+	product.setSourceVertex(VerificationUltility.hash(A.getSourceVertex(),
+						       T.getSourceVertex(),
+						       complementA.getSourceVertex(),
+						       knownInv.getSourceVertex(),
 						       numStatesA,
 						       numStatesPlayer,
 						       numStatesCA));
 
 	//set accepting
 	Set<Integer> acceptings = new HashSet<Integer>();
-	for (int acceptAx: A.getAcceptingStates()) {
-	    for (int acceptPlayer: T.getAcceptingStates()) {
-		for (int acceptNAy: complementA.getAcceptingStates()) {
-		    for (int acceptKI: knownInv.getAcceptingStates()) {
+	for (int acceptAx: A.getDestVertices()) {
+	    for (int acceptPlayer: T.getDestVertices()) {
+		for (int acceptNAy: complementA.getDestVertices()) {
+		    for (int acceptKI: knownInv.getDestVertices()) {
 			acceptings.add(VerificationUltility.hash(acceptAx,
 								 acceptPlayer,
 								 acceptNAy,
@@ -96,7 +92,7 @@ public class InductivenessChecking {
 		}
 	    }
 	}
-	product.setAcceptingStates(acceptings);
+	product.setAcceptingStateIds(acceptings);
 
 	List<DirectedEdgeWithInputOutput> edgesA =
 	    VerificationUltility.getEdges(A);
@@ -137,7 +133,7 @@ public class InductivenessChecking {
 	}
 	
 	List<DirectedEdge> edges =
-	    product.DFS(product.getInitState(), product.getAcceptingStates());
+	    product.DFS(product.getSourceVertex(), product.getDestVertices());
 
 	if (edges == null) {
 	    return null;

@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
-import org.sat4j.specs.ContradictionException;
-
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
@@ -45,7 +43,7 @@ public class FunctionalConsistencyChecking {
 		
 		//store nodes waiting to visit
 		Stack<DirectedEdge> workingStates = new Stack<DirectedEdge>();
-		DirectedEdge dummyEdge = createDummyEdge(productGraph.getInitState());
+		DirectedEdge dummyEdge = createDummyEdge(productGraph.getSourceVertex());
 
 		workingStates.push(dummyEdge);
 		
@@ -79,7 +77,7 @@ public class FunctionalConsistencyChecking {
 			//check output1 != output2
 			if(edgeToFind(currentEdge)){
 				//check reachable from currentEdge.to() to an accepting state
-				List<DirectedEdge> pathToAcc = productGraph.DFS(currentEdge.to(), productGraph.getAcceptingStates());
+				List<DirectedEdge> pathToAcc = productGraph.DFS(currentEdge.to(), productGraph.getDestVertices());
 				if(pathToAcc != null){
 					path.addAll(pathToAcc);
 					
@@ -115,10 +113,10 @@ public class FunctionalConsistencyChecking {
 	
 	private EdgeWeightedDigraph productConstruction(EdgeWeightedDigraph singleGraph){
 		int numState = singleGraph.V();
-		int init = hash(singleGraph.getInitState(), singleGraph.getInitState(), numState);
+		int init = hash(singleGraph.getSourceVertex(), singleGraph.getSourceVertex(), numState);
 		Set<Integer> newAcceptedStates = new HashSet<Integer>();
-		for(Integer acceptState1: singleGraph.getAcceptingStates()){
-			for(Integer acceptState2: singleGraph.getAcceptingStates()){
+		for(Integer acceptState1: singleGraph.getDestVertices()){
+			for(Integer acceptState2: singleGraph.getDestVertices()){
 				newAcceptedStates.add(hash(acceptState1, acceptState2, numState));
 			}
 		}

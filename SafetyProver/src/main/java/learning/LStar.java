@@ -22,7 +22,7 @@ public class LStar extends Learner {
 
         if (initAccepting) accept.add(0);
 
-        hypAut.setAcceptingStates(accept);
+        hypAut.setAcceptingStateIds(accept);
 
         for (int l = 0; l < numLetters; ++l)
             hypAut.addTrans(0, l, 0);
@@ -57,7 +57,7 @@ public class LStar extends Learner {
         while (cont) {
             final List<Integer> ex = cex.get();
             // analyze the counterexampe
-            int currentState = hypAut.getInitState();
+            int currentState = hypAut.getInitStateId();
             final List<Integer> prefix = new ArrayList<Integer>();
             Node lastSifted = null;
 
@@ -137,7 +137,7 @@ public class LStar extends Learner {
 
                 final int nextChar = ex.get(j++);
                 final State s = hypAut.getStates()[currentState];
-                final Set<Integer> nextStates = s.getDest(nextChar);
+                final Set<Integer> nextStates = s.getDestIds(nextChar);
                 assert (nextStates.size() == 1);
 
                 currentState = nextStates.iterator().next();
@@ -206,7 +206,7 @@ public class LStar extends Learner {
             }
         }
 
-        result.setAcceptingStates(accept);
+        result.setAcceptingStateIds(accept);
         return result;
     }
 

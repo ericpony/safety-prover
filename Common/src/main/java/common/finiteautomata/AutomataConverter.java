@@ -20,7 +20,7 @@ public class AutomataConverter {
         Map<Set<Integer>, State> mapStates = new HashMap<Set<Integer>, State>();
 
         Stack<Set<Integer>> workingStates = new Stack<Set<Integer>>();
-        Set<Integer> initSet = automata.getEpsilonClosure(automata.getInitState());
+        Set<Integer> initSet = automata.getEpsilonClosure(automata.getInitStateId());
         final boolean hasEpsilon = automata.hasEpsilonTransitions();
 
         workingStates.push(initSet);
@@ -64,33 +64,33 @@ public class AutomataConverter {
         Set<Integer> acceptingDFA = new HashSet<Integer>();
         for (Set<Integer> statesNFA : mapStates.keySet()) {
             for (Integer stateNFA : statesNFA) {
-                if (automata.getAcceptingStates().contains(stateNFA)) {
+                if (automata.getAcceptingStateIds().contains(stateNFA)) {
                     acceptingDFA.add(mapStates.get(statesNFA).getId());
                     break;
                 }
             }
         }
-        dfa.setAcceptingStates(acceptingDFA);
+        dfa.setAcceptingStateIds(acceptingDFA);
 
         //
         return dfa;
     }
 
     public static Automata toCompleteDFA(Automata dfa) {
-        int init = dfa.getInitState();
+        int init = dfa.getInitStateId();
         int numberOfLabels = dfa.getNumLabels();
         List<State> states = new ArrayList<State>(Arrays.asList(dfa.getStates()));
-        Set<Integer> accepting = dfa.getAcceptingStates();
+        Set<Integer> accepting = dfa.getAcceptingStateIds();
 
         Automata result = new Automata(init, states.size() + 1, numberOfLabels);
-        result.setAcceptingStates(new HashSet<Integer>(accepting));
+        result.setAcceptingStateIds(new HashSet<Integer>(accepting));
 
         int dummyState = states.size();
 
         //copy transition
         for (State state : states) {
             for (int i = 0; i < numberOfLabels; i++) {
-                Set<Integer> nexts = state.getDest(i);
+                Set<Integer> nexts = state.getDestIds(i);
                 if (nexts.isEmpty()) {
                     //add transition to dummy
                     result.addTrans(state.getId(), i, dummyState);
@@ -119,7 +119,7 @@ public class AutomataConverter {
 
         // forward
 
-        reachable[dfa.getInitState()] = true;
+        reachable[dfa.getInitStateId()] = true;
 
         boolean changed = true;
         while (changed) {
@@ -127,7 +127,7 @@ public class AutomataConverter {
             for (int i = 0; i < numStates; ++i)
                 if (reachable[i])
                     for (int l = 0; l < numLabels; ++l)
-                        for (int j : states.get(i).getDest(l))
+                        for (int j : states.get(i).getDestIds(l))
                             if (!reachable[j]) {
                                 changed = true;
                                 reachable[j] = true;
@@ -138,7 +138,7 @@ public class AutomataConverter {
 
         boolean backwardReachable[] = new boolean[numStates];
 
-        for (int a : dfa.getAcceptingStates())
+        for (int a : dfa.getAcceptingStateIds())
             if (reachable[a])
                 backwardReachable[a] = true;
 
@@ -148,7 +148,7 @@ public class AutomataConverter {
             for (int i = 0; i < numStates; ++i)
                 if (reachable[i] && !backwardReachable[i])
                     reachLoop:for (int l = 0; l < numLabels; ++l)
-                        for (int j : states.get(i).getDest(l))
+                        for (int j : states.get(i).getDestIds(l))
                             if (backwardReachable[j]) {
                                 changed = true;
                                 backwardReachable[i] = true;
@@ -169,20 +169,20 @@ public class AutomataConverter {
         if (num == 0)
             return new Automata(0, 1, numLabels);
 
-        Automata result = new Automata(mapping[dfa.getInitState()],
+        Automata result = new Automata(mapping[dfa.getInitStateId()],
                 num, numLabels);
 
         Set<Integer> newAccepting = new HashSet<Integer>();
-        for (int a : dfa.getAcceptingStates())
+        for (int a : dfa.getAcceptingStateIds())
             if (mapping[a] >= 0)
                 newAccepting.add(mapping[a]);
-        result.setAcceptingStates(newAccepting);
+        result.setAcceptingStateIds(newAccepting);
 
         for (int i = 0; i < numStates; ++i)
             if (backwardReachable[i]) {
                 State state = states.get(i);
                 for (int l = 0; l < numLabels; ++l)
-                    for (int dest : state.getDest(l))
+                    for (int dest : state.getDestIds(l))
                         if (backwardReachable[dest])
                             result.addTrans(mapping[i], l, mapping[dest]);
             }
@@ -195,7 +195,7 @@ public class AutomataConverter {
         final int numStates = states.length;
         final long numStatesLong = (long) numStates;
         final int numLabels = dfa.getNumLabels();
-        final Set<Integer> accepting = dfa.getAcceptingStates();
+        final Set<Integer> accepting = dfa.getAcceptingStateIds();
 
         final Set<Integer>[][] invTransitionsSet =
                 new Set[numStates][numLabels];
@@ -207,7 +207,7 @@ public class AutomataConverter {
         for (int s = 0; s < numStates; ++s) {
             final State state = states[s];
             for (int l = 0; l < numLabels; ++l)
-                for (int dest : state.getDest(l))
+                for (int dest : state.getDestIds(l))
                     invTransitionsSet[dest][l].add(s);
         }
 
@@ -299,7 +299,7 @@ public class AutomataConverter {
         final State[] states = dfa.getStates();
         final int numStates = states.length;
         final int numLabels = dfa.getNumLabels();
-        final Set<Integer> accepting = dfa.getAcceptingStates();
+        final Set<Integer> accepting = dfa.getAcceptingStateIds();
 
         final Map<List<Integer>, Integer> seenStates =
                 new HashMap<List<Integer>, Integer>();
@@ -322,7 +322,7 @@ public class AutomataConverter {
                 sig.add(accepting.contains(s) ? 1 : 0);
 
                 for (int l = 0; l < numLabels; ++l) {
-                    final Set<Integer> dest = state.getDest(l);
+                    final Set<Integer> dest = state.getDestIds(l);
                     if (dest.isEmpty()) {
                         sig.add(-1);
                     } else {
@@ -361,15 +361,15 @@ public class AutomataConverter {
                                       boolean hideDeadEnd) {
         final State[] states = dfa.getStates();
         final int numLabels = dfa.getNumLabels();
-        final Set<Integer> accepting = dfa.getAcceptingStates();
+        final Set<Integer> accepting = dfa.getAcceptingStateIds();
 
-        Automata result = new Automata(mapping[dfa.getInitState()],
+        Automata result = new Automata(mapping[dfa.getInitStateId()],
                 newStateNum, numLabels);
 
         Set<Integer> newAccepting = new HashSet<Integer>();
         for (int a : accepting)
             newAccepting.add(mapping[a]);
-        result.setAcceptingStates(newAccepting);
+        result.setAcceptingStateIds(newAccepting);
 
         int deadEnd;
         if (hideDeadEnd) {
@@ -381,7 +381,7 @@ public class AutomataConverter {
                 for (State state : states)
                     if (mapping[state.getId()] == deadEnd)
                         for (int l = 0; l < numLabels; ++l)
-                            for (int dest : state.getDest(l))
+                            for (int dest : state.getDestIds(l))
                                 if (mapping[dest] != deadEnd)
                                     continue outer;
 
@@ -393,7 +393,7 @@ public class AutomataConverter {
 
         for (State state : states)
             for (int l = 0; l < numLabels; ++l)
-                for (int dest : state.getDest(l))
+                for (int dest : state.getDestIds(l))
                     if (mapping[dest] != deadEnd)
                         result.addTrans(mapping[state.getId()],
                                 l,
@@ -410,9 +410,9 @@ public class AutomataConverter {
         if (!automata.isCompleteDFA()) {
             automata = toCompleteDFA(automata);
         }
-        Automata result = new Automata(automata.getInitState(), Arrays.asList(automata.getStates()), automata.getNumLabels());
+        Automata result = new Automata(automata.getInitStateId(), Arrays.asList(automata.getStates()), automata.getNumLabels());
 
-        Set<Integer> acceptings = automata.getAcceptingStates();
+        Set<Integer> acceptings = automata.getAcceptingStateIds();
         Set<Integer> complementAccepting = new HashSet<Integer>();
         for (int state = 0; state < automata.getStates().length; state++) {
             if (!acceptings.contains(state)) {
@@ -420,7 +420,7 @@ public class AutomataConverter {
             }
         }
 
-        result.setAcceptingStates(complementAccepting);
+        result.setAcceptingStateIds(complementAccepting);
 
         return result;
     }
@@ -458,7 +458,7 @@ public class AutomataConverter {
 
         final int hashStride = wordLen + 1;
         Automata aut =
-                new Automata(VerificationUltility.hash(0, function.getInitState(), hashStride),
+                new Automata(VerificationUltility.hash(0, function.getSourceVertex(), hashStride),
                         function.V() * (wordLen + 1),
                         numLetters);
 
@@ -474,9 +474,9 @@ public class AutomataConverter {
         }
 
         Set<Integer> acceptings = new HashSet<Integer>();
-        for (int a : function.getAcceptingStates())
+        for (int a : function.getDestVertices())
             acceptings.add(VerificationUltility.hash(wordLen, a, hashStride));
-        aut.setAcceptingStates(acceptings);
+        aut.setAcceptingStateIds(acceptings);
 
         Automata prunedAut = AutomataConverter.pruneUnreachableStates(aut);
         Automata completeAut = AutomataConverter.toCompleteDFA(prunedAut);
@@ -492,7 +492,7 @@ public class AutomataConverter {
 
         final int hashStride = wordLen + 1;
         Automata aut =
-                new Automata(VerificationUltility.hash(0, function.getInitState(), hashStride),
+                new Automata(VerificationUltility.hash(0, function.getSourceVertex(), hashStride),
                         function.V() * (wordLen + 1),
                         numLetters);
 
@@ -508,9 +508,9 @@ public class AutomataConverter {
         }
 
         Set<Integer> acceptings = new HashSet<Integer>();
-        for (int a : function.getAcceptingStates())
+        for (int a : function.getDestVertices())
             acceptings.add(VerificationUltility.hash(wordLen, a, hashStride));
-        aut.setAcceptingStates(acceptings);
+        aut.setAcceptingStateIds(acceptings);
 
         Automata prunedAut = AutomataConverter.pruneUnreachableStates(aut);
         Automata completeAut = AutomataConverter.toCompleteDFA(prunedAut);
@@ -537,7 +537,7 @@ public class AutomataConverter {
                                                int maxWords) {
         List<List<Integer>> res = new ArrayList<List<Integer>>();
         try {
-            exploreWords(lang.getStates()[lang.getInitState()],
+            exploreWords(lang.getInitState(),
                     lang, wordLength,
                     new ArrayList<Integer>(),
                     res,
@@ -557,17 +557,17 @@ public class AutomataConverter {
                                      List<List<Integer>> result,
                                      int maxWords) {
         if (wordLength == 0) {
-            if (lang.getAcceptingStates().contains(state.getId())) {
+            if (lang.getAcceptingStateIds().contains(state.getId())) {
                 List<Integer> finalWord = new ArrayList<Integer>();
                 finalWord.addAll(currentWord);
                 result.add(finalWord);
                 if (result.size() >= maxWords)
-                    throw new TooManyWordsException();
+                    throw new TooManyWordsException(); // break the recursion
             }
         } else {
             for (int l : state.getOutgoingLabels()) {
                 currentWord.add(l);
-                for (int id : state.getDest(l))
+                for (int id : state.getDestIds(l))
                     exploreWords(lang.getStates()[id],
                             lang,
                             wordLength - 1,
@@ -586,7 +586,7 @@ public class AutomataConverter {
     public static List<Integer> getSomeWord(Automata lang) {
         final List<Integer> res = new ArrayList<Integer>();
 
-        if (findWord(lang.getStates()[lang.getInitState()],
+        if (findWord(lang.getStates()[lang.getInitStateId()],
                 lang,
                 res,
                 new boolean[lang.getStates().length]))
@@ -598,12 +598,12 @@ public class AutomataConverter {
                                     Automata lang,
                                     List<Integer> currentWord,
                                     boolean[] seenStates) {
-        if (lang.getAcceptingStates().contains(state.getId()))
+        if (lang.getAcceptingStateIds().contains(state.getId()))
             return true;
 
         for (int l : state.getOutgoingLabels()) {
             currentWord.add(l);
-            for (int id : state.getDest(l)) {
+            for (int id : state.getDestIds(l)) {
                 if (!seenStates[id]) {
                     seenStates[id] = true;
                     if (findWord(lang.getStates()[id],
@@ -628,7 +628,7 @@ public class AutomataConverter {
         final int N = states.length;
         final List<Integer>[] words = new List[N];
 
-        for (int i : lang.getAcceptingStates())
+        for (int i : lang.getAcceptingStateIds())
             words[i] = new ArrayList<Integer>();
 
         boolean changed = true;
@@ -641,7 +641,7 @@ public class AutomataConverter {
                 int shortestSuccLabel = -1;
 
                 for (int l : state.getOutgoingLabels())
-                    for (int id : state.getDest(l))
+                    for (int id : state.getDestIds(l))
                         if (shortestSucc == null ||
                                 (words[id] != null &&
                                         words[id].size() < shortestSucc.size())) {
@@ -660,7 +660,7 @@ public class AutomataConverter {
             }
         }
 
-        return words[lang.getInitState()];
+        return words[lang.getInitStateId()];
     }
 
     public static Automata getWordAutomaton(Automata aut, int wordLength) {
@@ -668,7 +668,7 @@ public class AutomataConverter {
 
         Set<Integer> acceptings = new HashSet<Integer>();
         acceptings.add(wordLength);
-        lengthAut.setAcceptingStates(acceptings);
+        lengthAut.setAcceptingStateIds(acceptings);
 
         for (int l = 0; l < aut.getNumLabels(); ++l)
             for (int s = 0; s < wordLength; ++s)
@@ -687,7 +687,7 @@ public class AutomataConverter {
         // copy the automata transitions
         for (int s = 0; s < N; ++s)
             for (int l = 0; l < numLetters; ++l)
-                for (int t : autStates[s].getDest(l))
+                for (int t : autStates[s].getDestIds(l))
                     for (int i = 0; i < N * 2; ++i)
                         result.addTrans(1 + i * N + s, l, 1 + i * N + t);
 
@@ -697,14 +697,14 @@ public class AutomataConverter {
         for (int i = 0; i < N; ++i)
             acceptings.add(1 + i * 2 * N + N + i);
 
-        result.setAcceptingStates(acceptings);
+        result.setAcceptingStateIds(acceptings);
 
         // add epsilon transitions
-        for (int s : aut.getAcceptingStates())
+        for (int s : aut.getAcceptingStateIds())
             for (int i = 0; i < N; ++i)
                 result.addTrans(1 + i * 2 * N + s,
                         Automata.EPSILON_LABEL,
-                        1 + i * 2 * N + N + aut.getInitState());
+                        1 + i * 2 * N + N + aut.getInitStateId());
 
         for (int i = 0; i < N; ++i)
             result.addTrans(0, Automata.EPSILON_LABEL, 1 + i * 2 * N + i);
@@ -725,10 +725,10 @@ public class AutomataConverter {
 
         final Set<Integer> acceptings = new HashSet<Integer>();
         acceptings.add(1);
-        prefixAut.setAcceptingStates(acceptings);
+        prefixAut.setAcceptingStateIds(acceptings);
 
         final Automata restrictedClosure =
-                VerificationUltility.getIntersectionLazily(closure, prefixAut, false);
+                VerificationUltility.getIntersectionLazily(closure, prefixAut);
         final Automata result =
                 minimise(VerificationUltility.getUnion(restrictedClosure, aut));
         return result;
@@ -736,13 +736,13 @@ public class AutomataConverter {
 
     public static BasicAutomaton SLRP2Alf(Automata from) {
         BasicAutomaton to = new BasicAutomaton(from.isDFA(), from.getNumStates(), from.getNumLabels());
-        to.addInitialState(from.getInitState());
-        for (int state : from.getAcceptingStates()) {
+        to.addInitialState(from.getInitStateId());
+        for (int state : from.getAcceptingStateIds()) {
             to.addFinalState(state);
         }
         for (State source : from.getStates()) {
             for (Integer label : source.getOutgoingLabels()) {
-                for (Integer dest : source.getDest(label)) {
+                for (Integer dest : source.getDestIds(label)) {
                     to.addTransition(new BasicTransition(source.getId(), label, dest));
                 }
             }
@@ -762,7 +762,7 @@ public class AutomataConverter {
             for (BasicTransition t : from.getTransitions()) {
                 to.addTrans(t.source, t.label, t.destination);
             }
-            to.setAcceptingStates(from.getFinalStates());
+            to.setAcceptingStateIds(from.getFinalStates());
             Iterator<Integer> it = init.iterator();
             while (it.hasNext()) to.addTrans(initState, Automata.EPSILON_LABEL, it.next());
         } else {
@@ -774,7 +774,7 @@ public class AutomataConverter {
             for (BasicTransition t : from.getTransitions()) {
                 to.addTrans(t.source, t.label, t.destination);
             }
-            to.setAcceptingStates(from.getFinalStates());
+            to.setAcceptingStateIds(from.getFinalStates());
         }
         return to;
     }

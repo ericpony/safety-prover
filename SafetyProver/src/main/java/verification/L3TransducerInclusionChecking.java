@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.HashSet;
 
-import common.VerificationUltility;
 import common.IntPair;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
@@ -20,8 +19,8 @@ public class L3TransducerInclusionChecking {
     public static List<int[]> findShortestCounterExample(EdgeWeightedDigraph dfa1,
 							 EdgeWeightedDigraph dfa2){
 	// get accepting states
-	Set<Integer> acceptingStates1 = dfa1.getAcceptingStates();
-	Set<Integer> acceptingStates2 = dfa2.getAcceptingStates();
+	Set<Integer> acceptingStates1 = dfa1.getDestVertices();
+	Set<Integer> acceptingStates2 = dfa2.getDestVertices();
 	
 	// dfa2 might be incomplete, therefore add a
 	// special non-accepting looping state
@@ -37,19 +36,19 @@ public class L3TransducerInclusionChecking {
 	// for each state, store the path from root to it
 	List<List<int[]>> paths = new ArrayList<List<int[]>>();
 
-	working1.add(dfa1.getInitState());
-	working2.add(dfa2.getInitState());
+	working1.add(dfa1.getSourceVertex());
+	working2.add(dfa2.getSourceVertex());
 	// add path to init
 	paths.add(new ArrayList<int[]>());
 
 	// check whether a node is visited or not
 	final Set<IntPair> isVisited = new HashSet<IntPair>();
-	final IntPair pairInit = new IntPair(dfa1.getInitState(), dfa2.getInitState());
+	final IntPair pairInit = new IntPair(dfa1.getSourceVertex(), dfa2.getSourceVertex());
 	isVisited.add(pairInit);
 
 	//	boolean[] isVisited = new boolean[numStatesComposition * (dfa2.V() + 1)];
-	//	int hashInit = VerificationUltility.hash(dfa1.getInitState(),
-	//						 dfa2.getInitState(), numStatesComposition);
+	//	int hashInit = VerificationUltility.hash(dfa1.getSourceVertex(),
+	//						 dfa2.getSourceVertex(), numStatesComposition);
 	//	isVisited[hashInit] = true;
 
 	while (!working2.isEmpty()) {

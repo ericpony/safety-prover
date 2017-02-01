@@ -56,28 +56,28 @@ public class FiniteStateSets {
         if (reachable == null) {
             LOGGER.debug("computing automaton describing reachable configurations of length " + wordLen);
 
-            //final Automata complementF = AutomataConverter.getComplement(F);
+            // initial configurations are those in I with length wordLen
             reachable = AutomataConverter.getWordAutomaton(I, wordLen);
 
-            // do one initial transition
+            // do one transition from the initial configurations
             reachable = AutomataConverter.minimiseAcyclic(
                     VerificationUltility.getUnion(
                             reachable,
                             VerificationUltility.getImage(reachable, T)));
-            Automata newConfigurations = reachable;
+            Automata newConfig = reachable;
 
             while (true) {
                 // check whether any new configurations exist
-                if (AutomataConverter.getWords(newConfigurations, wordLen, 1).isEmpty()) break;
+                if (AutomataConverter.getWords(newConfig, wordLen, 1).isEmpty()) break;
 
                 LOGGER.debug("reachable " + reachable.getStates().length +
-                        ", new " + newConfigurations.getStates().length);
+                        ", new " + newConfig.getStates().length);
 
                 Automata post = AutomataConverter.minimiseAcyclic(
-                        VerificationUltility.getImage(newConfigurations, T));
+                        VerificationUltility.getImage(newConfig, T));
 
-                newConfigurations = AutomataConverter.minimiseAcyclic(
-                        VerificationUltility.getIntersectionLazily(post, reachable, true));
+                newConfig = AutomataConverter.minimiseAcyclic(
+                        VerificationUltility.getDifference(post, reachable));
 
                 reachable = AutomataConverter.minimiseAcyclic(
                         VerificationUltility.getUnion(reachable, post));

@@ -30,14 +30,14 @@ public class State {
         destSet.add(dest);
     }
 
-    public Set<Integer> getDest(int label) {
+    public Set<Integer> getDestIds(int label) {
         Set<Integer> dest = outgoingTrans.get(label);
         if (dest != null)
             return dest;
         return emptySet;
     }
 
-    public Set<Integer> getDest() {
+    public Set<Integer> getDestIds() {
         Set<Integer> dest = new HashSet<Integer>();
         for (Set<Integer> destOnLabel : outgoingTrans.values()) {
             dest.addAll(destOnLabel);

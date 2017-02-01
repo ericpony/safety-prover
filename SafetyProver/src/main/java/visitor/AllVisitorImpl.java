@@ -145,7 +145,7 @@ public class AllVisitorImpl implements AllVisitor<Object, RegularModel> {
         Set<Integer> acceptingStates = (Set<Integer>) p.automataacceptingsrule_.accept(this, arg);
 
         common.finiteautomata.Automata newAutomata = new common.finiteautomata.Automata(initState, automataStateToIndex.size(), labelToIndex.size());
-        newAutomata.setAcceptingStates(acceptingStates);
+        newAutomata.setAcceptingStateIds(acceptingStates);
         for (DirectedEdgeWithInputOutput edge : edges) {
             newAutomata.addTrans(edge.from(), edge.getInput(), edge.to());
         }

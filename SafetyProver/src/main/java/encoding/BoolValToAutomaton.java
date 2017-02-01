@@ -42,7 +42,7 @@ public class BoolValToAutomaton {
 
     public static EdgeWeightedDigraph buildLexOrder(EdgeWeightedDigraph rf) {
 	int numRFStates = rf.V();
-	Set<Integer> rfAccept = rf.getAcceptingStates();
+	Set<Integer> rfAccept = rf.getDestVertices();
 	Set<Integer> newAccept = new HashSet<Integer> ();
 
 	for (int a : rfAccept)
@@ -51,8 +51,8 @@ public class BoolValToAutomaton {
 		
 	EdgeWeightedDigraph result =
 	    new EdgeWeightedDigraph(numRFStates * numRFStates * 3,
-				    VerificationUltility.hash(rf.getInitState(),
-							      rf.getInitState(), 0,
+				    VerificationUltility.hash(rf.getSourceVertex(),
+							      rf.getSourceVertex(), 0,
 							      numRFStates, numRFStates),
 				    newAccept);
 
@@ -126,7 +126,7 @@ public class BoolValToAutomaton {
 		    Automata graph = new Automata(0, 1, numLetters);
 		    Set<Integer> newAccept = new HashSet<Integer>();
 		    newAccept.add(0);
-		    graph.setAcceptingStates(newAccept);
+		    graph.setAcceptingStateIds(newAccept);
 
 		    for(int label = 0; label < numLetters; label++)
 			graph.addTrans(0, label, 0);
@@ -139,7 +139,7 @@ public class BoolValToAutomaton {
 		
 		//state count from 0, label count from 0
 		Automata graph = new Automata(0, numStates, numLetters);
-		graph.setAcceptingStates(newAccept);
+		graph.setAcceptingStateIds(newAccept);
 		
 		int run = encoding.getStartIndexOfTransVars();
 		for(int source = 0; source < numStates; source++){

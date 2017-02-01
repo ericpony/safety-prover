@@ -11,7 +11,7 @@ import java.util.*;
 public class Automata {
     public static int EPSILON_LABEL = -1;
 
-    private int initState;
+    private int initStateId;
     private State[] states;
 
     /**
@@ -24,8 +24,8 @@ public class Automata {
     /**
      * @param numLabels include 0 for epsilon (empty) label
      */
-    public Automata(int initState, int numStates, int numLabels) {
-        this.initState = initState;
+    public Automata(int initStateId, int numStates, int numLabels) {
+        this.initStateId = initStateId;
         this.states = new State[numStates];
         for (int i = 0; i < numStates; i++) {
             this.states[i] = new State(i);
@@ -35,14 +35,14 @@ public class Automata {
         this.acceptingStates = new HashSet<Integer>();
     }
 
-    public Automata(int initState, State[] states, int numLabels) {
-        this.initState = initState;
+    public Automata(int initStateId, State[] states, int numLabels) {
+        this.initStateId = initStateId;
         this.states = states;
         this.numLabels = numLabels;
     }
 
-    public Automata(int initState, List<State> states, int numLabels) {
-        this.initState = initState;
+    public Automata(int initStateId, List<State> states, int numLabels) {
+        this.initStateId = initStateId;
         this.states = new State[states.size()];
         for (int i = 0; i < states.size(); i++) {
             this.states[i] = states.get(i);
@@ -68,7 +68,7 @@ public class Automata {
     /**
      * Set accepting states
      */
-    public void setAcceptingStates(Collection<Integer> acceptingStates) {
+    public void setAcceptingStateIds(Collection<Integer> acceptingStates) {
         this.acceptingStates = new HashSet<Integer>(acceptingStates);
     }
 
@@ -78,7 +78,7 @@ public class Automata {
     public Set<Integer> getDests(Set<Integer> sources, int label) {
         Set<Integer> result = new HashSet<Integer>();
         for (Integer source : sources) {
-            result.addAll(states[source].getDest(label));
+            result.addAll(states[source].getDestIds(label));
         }
 
         return result;
@@ -88,7 +88,7 @@ public class Automata {
      * Get set of destinations from sources by transitions with label
      */
     public Set<Integer> getDests(Integer source, int label) {
-        return states[source].getDest(label);
+        return states[source].getDestIds(label);
     }
 
     /**
@@ -110,7 +110,7 @@ public class Automata {
             result.add(currentState);
 
             //add new states to workingState
-            for (int child : states[currentState].getDest(EPSILON_LABEL)) {
+            for (int child : states[currentState].getDestIds(EPSILON_LABEL)) {
                 if (!isVisited[child]) {
                     isVisited[child] = true;
                     workingStates.push(child);
@@ -129,7 +129,7 @@ public class Automata {
     }
 
     public List<Integer> findAcceptingString() {
-        return findStringFrom(initState);
+        return findStringFrom(initStateId);
     }
 
     public List<Integer> findStringFrom(Integer s) {
@@ -144,7 +144,7 @@ public class Automata {
         visited.add(s);
         State ss = states[s];
         for (int label : ss.getOutgoingLabels()) {
-            for (int next : ss.getDest(label)) {
+            for (int next : ss.getDestIds(label)) {
                 List<Integer> rest = findStringHelper(next, visited);
                 if (rest != null) {
                     rest.add(0, label);
@@ -157,13 +157,13 @@ public class Automata {
 
     public boolean isDFA() {
         for (State state : states) {
-            Set<Integer> nexts = state.getDest(EPSILON_LABEL);
+            Set<Integer> nexts = state.getDestIds(EPSILON_LABEL);
             if (!nexts.isEmpty()) {
                 return false;
             }
 
             for (int i = 0; i < numLabels; i++) {
-                nexts = state.getDest(i);
+                nexts = state.getDestIds(i);
                 if (nexts.size() > 1) {
                     return false;
                 }
@@ -189,17 +189,17 @@ public class Automata {
     }
 
     public boolean accepts(List<Integer> word) {
-        return acceptsHelp(word, getInitState(), 0);
+        return acceptsHelp(word, getInitStateId(), 0);
     }
 
     private boolean acceptsHelp(List<Integer> word,
                                 int state,
                                 int index) {
         if (index == word.size()) {
-            return getAcceptingStates().contains(state);
+            return getAcceptingStateIds().contains(state);
         } else {
             State s = getStates()[state];
-            for (int nextState : s.getDest(word.get(index)))
+            for (int nextState : s.getDestIds(word.get(index)))
                 if (acceptsHelp(word, nextState, index + 1))
                     return true;
             return false;
@@ -212,11 +212,11 @@ public class Automata {
         for (State v : states) {
             Set<Integer> labels = v.getOutgoingLabels();
             for (int label : labels) {
-                s.append(v.getId() + " -" + label + "-> " + v.getDest(label));
+                s.append(v.getId() + " -" + label + "-> " + v.getDestIds(label));
                 s.append(NEWLINE);
             }
         }
-        s.append("init: " + getInitState() + NEWLINE);
+        s.append("init: " + getInitStateId() + NEWLINE);
         s.append("accepting: " + acceptingStates + NEWLINE);
 
         return s.toString();
@@ -229,12 +229,12 @@ public class Automata {
 
         s.append(name);
         s.append(" {" + NEWLINE);
-        s.append("  init: s" + getInitState() + ";" + NEWLINE);
+        s.append("  init: s" + getInitStateId() + ";" + NEWLINE);
 
         for (State v : states) {
             Set<Integer> labels = v.getOutgoingLabels();
             for (int label : labels) {
-                for (int dest : v.getDest(label)) {
+                for (int dest : v.getDestIds(label)) {
                     s.append("  s" +
                             v.getId() + " -> s" + dest + " " +
                             indexToLabel.get(label));
@@ -272,11 +272,15 @@ public class Automata {
         numLabels = n;
     }
 
-    public Set<Integer> getAcceptingStates() {
+    public Set<Integer> getAcceptingStateIds() {
         return acceptingStates;
     }
 
-    public int getInitState() {
-        return initState;
+    public int getInitStateId() {
+        return initStateId;
+    }
+
+    public State getInitState() {
+        return states[initStateId];
     }
 }

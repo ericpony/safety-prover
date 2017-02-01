@@ -275,7 +275,7 @@ public class ReachabilityChecking {
     public void fixTransducer(EdgeWeightedDigraph relation) {
         assert (!lexicographicOrder);
         assert (relation.V() == transducerNumStates);
-        assert (relation.getInitState() == 0);
+        assert (relation.getSourceVertex() == 0);
 
         try {
             for (int s1 = 1; s1 <= transducerNumStates; ++s1)
@@ -299,7 +299,7 @@ public class ReachabilityChecking {
                                             (s1, l1, l2, s2)});
                         }
 
-            final Set<Integer> accepting = relation.getAcceptingStates();
+            final Set<Integer> accepting = relation.getDestVertices();
             for (int s = 1; s <= transducerNumStates; ++s) {
                 boolean a = accepting.contains(s - 1);
                 solver.addClause(new int[]{(a ? 1 : -1) *
@@ -313,7 +313,7 @@ public class ReachabilityChecking {
     public void assertLargerTransducer(EdgeWeightedDigraph relation) {
         assert (!lexicographicOrder);
         assert (relation.V() == transducerNumStates);
-        assert (relation.getInitState() == 0);
+        assert (relation.getSourceVertex() == 0);
 
         List<Integer> unsetVariables = new ArrayList<Integer>();
 
@@ -343,7 +343,7 @@ public class ReachabilityChecking {
                                 unsetVariables.add(var);
                         }
 
-            final Set<Integer> accepting = relation.getAcceptingStates();
+            final Set<Integer> accepting = relation.getDestVertices();
             for (int s = 1; s <= transducerNumStates; ++s) {
                 boolean a = accepting.contains(s - 1);
                 final int var = transducerEncoding.getIndexZVar(s);

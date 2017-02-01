@@ -10,15 +10,15 @@ import common.finiteautomata.State;
 
 public class EmptyChecking {
 	public static boolean isEmpty(Automata automata) {
-		Set<Integer> acceptingStates = automata.getAcceptingStates();
+		Set<Integer> acceptingStates = automata.getAcceptingStateIds();
 
 		// store nodes waiting to visit
 		Stack<Integer> workingStates = new Stack<Integer>();
-		workingStates.push(automata.getInitState());
+		workingStates.push(automata.getInitStateId());
 
 		// check whether a node is visited or not
 		boolean[] isVisited = new boolean[automata.getStates().length];
-		isVisited[automata.getInitState()] = true;
+		isVisited[automata.getInitStateId()] = true;
 		while (!workingStates.isEmpty()) {
 			int currentState = workingStates.pop();
 
@@ -26,7 +26,7 @@ public class EmptyChecking {
 				return false;
 			}
 
-			Set<Integer> dests = automata.getStates()[currentState].getDest();
+			Set<Integer> dests = automata.getStates()[currentState].getDestIds();
 			for (int dest : dests) {
 				if (!isVisited[dest]) {
 					workingStates.push(dest);
@@ -46,7 +46,7 @@ public class EmptyChecking {
 	public static List<Integer> findAcceptedWord(Automata automata) {
 		boolean isEmpty = true;
 
-		Set<Integer> acceptingStates = automata.getAcceptingStates();
+		Set<Integer> acceptingStates = automata.getAcceptingStateIds();
 
 		// store the path from root to current Node
 		List<Integer> path = new ArrayList<Integer>();
@@ -55,7 +55,7 @@ public class EmptyChecking {
 
 		// store nodes waiting to visit
 		Stack<Integer> workingStates = new Stack<Integer>();
-		workingStates.push(automata.getInitState());
+		workingStates.push(automata.getInitStateId());
 
 		Stack<Integer> labels = new Stack<Integer>();
 		int INIT_LABEL = -1;
@@ -67,7 +67,7 @@ public class EmptyChecking {
 
 		// check whether a node is visited or not
 		boolean[] isVisited = new boolean[automata.getStates().length];
-		isVisited[automata.getInitState()] = true;
+		isVisited[automata.getInitStateId()] = true;
 		while (!workingStates.isEmpty()) {
 			int currentState = workingStates.pop();
 			int label = labels.pop();
@@ -97,7 +97,7 @@ public class EmptyChecking {
 
 			State state = automata.getStates()[currentState];
 			for(int nextLabel : state.getOutgoingLabels()){
-				Set<Integer> dests = automata.getStates()[currentState].getDest(nextLabel);
+				Set<Integer> dests = automata.getStates()[currentState].getDestIds(nextLabel);
 				for (int dest : dests) {
 					if (!isVisited[dest]) {
 						workingStates.push(dest);
@@ -126,12 +126,12 @@ public class EmptyChecking {
 	 * Return null if the automata is empty
 	 */
 	public static List<Integer> findShortestAcceptedWord(Automata automata) {
-		Set<Integer> acceptingStates = automata.getAcceptingStates();
+		Set<Integer> acceptingStates = automata.getAcceptingStateIds();
 				
 		//all waiting states
         List<Integer> working = new ArrayList<Integer>();
         //add init
-        working.add(automata.getInitState());
+        working.add(automata.getInitStateId());
         
         //for each state, store the path from root to it
         List<List<Integer>> paths = new ArrayList<List<Integer>>();
@@ -140,7 +140,7 @@ public class EmptyChecking {
                 
 		// check whether a node is visited or not
 		boolean [] isVisited = new boolean[automata.getStates().length];
-  		isVisited[automata.getInitState()] = true;
+  		isVisited[automata.getInitStateId()] = true;
         while (working.size() > 0)
         {
             int currentState = working.remove(0);
@@ -152,7 +152,7 @@ public class EmptyChecking {
             
             State state = automata.getStates()[currentState];
 			for(int nextLabel : state.getOutgoingLabels()){
-				Set<Integer> dests = automata.getStates()[currentState].getDest(nextLabel);
+				Set<Integer> dests = automata.getStates()[currentState].getDestIds(nextLabel);
 				for (int dest : dests) {
 					if (!isVisited[dest]) {
 						working.add(dest);

@@ -22,9 +22,9 @@ public class AcceptanceChecking {
 	 * @return the word which is accepted by this automata
 	 */
 	public static boolean acceptsWord(Automata automata, List<Integer> word) {
-		Set<Integer> acceptingStates = automata.getAcceptingStates();
+		Set<Integer> acceptingStates = automata.getAcceptingStateIds();
 
-		Set<Integer> initSet = automata.getEpsilonClosure(automata.getInitState());
+		Set<Integer> initSet = automata.getEpsilonClosure(automata.getInitStateId());
 
 		// store nodes waiting to visit
 		Stack<Integer> workingStates = new Stack<Integer>();
@@ -49,7 +49,7 @@ public class AcceptanceChecking {
 			//
 			if (depthLevel < word.size()) {
 				Set<Integer> dests = automata.getStates()[currentState]
-						.getDest(word.get(depthLevel));
+						.getDestIds(word.get(depthLevel));
 				dests = automata.getEpsilonClosure(dests);
 				for (int dest : dests) {
 					workingStates.push(dest);

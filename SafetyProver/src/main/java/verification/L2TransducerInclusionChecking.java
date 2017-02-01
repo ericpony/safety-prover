@@ -18,8 +18,8 @@ public class L2TransducerInclusionChecking {
 	 */
 	public static List<int[]> findShortestCounterExample(EdgeWeightedDigraph dfa1, EdgeWeightedDigraph completeDFA2){
 		// get accepting states
-		Set<Integer> acceptingStates1 = dfa1.getAcceptingStates();
-		Set<Integer> acceptingStates2 = completeDFA2.getAcceptingStates();
+		Set<Integer> acceptingStates1 = dfa1.getDestVertices();
+		Set<Integer> acceptingStates2 = completeDFA2.getDestVertices();
 
 		int numStatesComposition = dfa1.V();
 
@@ -30,15 +30,15 @@ public class L2TransducerInclusionChecking {
 		// for each state, store the path from root to it
 		List<List<int[]>> paths = new ArrayList<List<int[]>>();
 
-		working1.add(dfa1.getInitState());
-		working2.add(completeDFA2.getInitState());
+		working1.add(dfa1.getSourceVertex());
+		working2.add(completeDFA2.getSourceVertex());
 		// add path to init
 		paths.add(new ArrayList<int[]>());
 
 		// check whether a node is visited or not
 		boolean[] isVisited = new boolean[numStatesComposition * completeDFA2.V()];
-		int hashInit = VerificationUltility.hash(dfa1.getInitState(),
-				completeDFA2.getInitState(), numStatesComposition);
+		int hashInit = VerificationUltility.hash(dfa1.getSourceVertex(),
+				completeDFA2.getSourceVertex(), numStatesComposition);
 		isVisited[hashInit] = true;
 		while (!working2.isEmpty()) {
 			int currentState1 = working1.remove(0);

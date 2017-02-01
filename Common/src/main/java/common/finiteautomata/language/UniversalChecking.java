@@ -14,25 +14,25 @@ public class UniversalChecking {
 	 * @param dfa It must be a DFA
 	 */
 	public static boolean isUniversal(Automata dfa){
-		Set<Integer> acceptingStates = dfa.getAcceptingStates();
+		Set<Integer> acceptingStates = dfa.getAcceptingStateIds();
 		
 		//check init is accepted
-		if(!acceptingStates.contains(dfa.getInitState())){
+		if(!acceptingStates.contains(dfa.getInitStateId())){
 			return false;
 		}
 		
 		//store nodes waiting to visit
 		Stack<Integer> workingStates = new Stack<Integer>();
-		workingStates.push(dfa.getInitState());
+		workingStates.push(dfa.getInitStateId());
 		
 		//check whether a node is visited or not
 		boolean [] isVisited = new boolean[dfa.getStates().length];
-		isVisited[dfa.getInitState()] = true;
+		isVisited[dfa.getInitStateId()] = true;
 		while(!workingStates.isEmpty()){
 			int currentState = workingStates.pop();
 			
 			for(int i = 0; i < dfa.getNumLabels(); i++){
-				Set<Integer> dests = dfa.getStates()[currentState].getDest(i);
+				Set<Integer> dests = dfa.getStates()[currentState].getDestIds(i);
 				//since dfa, dests has at most 1 state
 				dests.retainAll(acceptingStates);
 				
@@ -61,17 +61,17 @@ public class UniversalChecking {
 	 * Return null if not exists
 	 */
 	public static List<Integer> findShortestUnacceptingWords(Automata dfa) {
-		Set<Integer> acceptingStates = dfa.getAcceptingStates();
+		Set<Integer> acceptingStates = dfa.getAcceptingStateIds();
 		
 		//check init is accepted
-		if(!acceptingStates.contains(dfa.getInitState())){
+		if(!acceptingStates.contains(dfa.getInitStateId())){
 			return new ArrayList<Integer>();
 		}
 		
 		//all waiting states
         List<Integer> working = new ArrayList<Integer>();
         //add init
-        working.add(dfa.getInitState());
+        working.add(dfa.getInitStateId());
         
         //for each state, store the path from root to it
         List<List<Integer>> paths = new ArrayList<List<Integer>>();
@@ -80,14 +80,14 @@ public class UniversalChecking {
                 
 		// check whether a node is visited or not
 		boolean [] isVisited = new boolean[dfa.getStates().length];
-  		isVisited[dfa.getInitState()] = true;
+  		isVisited[dfa.getInitStateId()] = true;
         while (working.size() > 0)
         {
             int currentState = working.remove(0);
             List<Integer> currentPath = paths.remove(0);
             
             for (int i = 0; i < dfa.getNumLabels(); i++) {
-				Set<Integer> dests = dfa.getStates()[currentState].getDest(i);
+				Set<Integer> dests = dfa.getStates()[currentState].getDestIds(i);
 				//since dfa, dests has at most 1 state
 				dests.retainAll(acceptingStates);
 
@@ -122,10 +122,10 @@ public class UniversalChecking {
 	 * Return null if not exists
 	 */
 	public static List<Integer> findUnacceptingWord(Automata dfa){
-		Set<Integer> acceptingStates = dfa.getAcceptingStates();
+		Set<Integer> acceptingStates = dfa.getAcceptingStateIds();
 		
 		//check init is accepted
-		if(!acceptingStates.contains(dfa.getInitState())){
+		if(!acceptingStates.contains(dfa.getInitStateId())){
 			return new ArrayList<Integer>();
 		}
 				
@@ -136,7 +136,7 @@ public class UniversalChecking {
 
 		//store nodes waiting to visit
 		Stack<Integer> workingStates = new Stack<Integer>();
-		workingStates.push(dfa.getInitState());
+		workingStates.push(dfa.getInitStateId());
 		
 		Stack<Integer> labels = new Stack<Integer>();
 		int INIT_LABEL = -1;
@@ -148,7 +148,7 @@ public class UniversalChecking {
 
 		//check whether a node is visited or not
 		boolean [] isVisited = new boolean[dfa.getStates().length];
-		isVisited[dfa.getInitState()] = true;
+		isVisited[dfa.getInitStateId()] = true;
 		while(!workingStates.isEmpty()){
 			int currentState = workingStates.pop();
 			int label = labels.pop();
@@ -171,7 +171,7 @@ public class UniversalChecking {
 			depthList.add(depthLevel);
 
 			for(int i = 0; i < dfa.getNumLabels(); i++){
-				Set<Integer> dests = dfa.getStates()[currentState].getDest(i);
+				Set<Integer> dests = dfa.getStates()[currentState].getDestIds(i);
 				//since dfa, dests has at most 1 state
 				dests.retainAll(acceptingStates);
 				
