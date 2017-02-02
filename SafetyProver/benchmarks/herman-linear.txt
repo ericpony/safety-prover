@@ -13,7 +13,7 @@ Initial {
     s0 -> s0 T;
 
     s0 -> s1 T;
-    
+
     s1 -> s1 N;
     s1 -> s1 T;
 
@@ -32,7 +32,7 @@ Transition {
     s0 -> s1 T/T;
     // pass to right
     s0 -> s2 T/N;
-    
+
     // Merge tokens
     s2 -> s1 T/T;
 

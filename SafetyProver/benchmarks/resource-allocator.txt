@@ -19,14 +19,14 @@ Transition {
     init: s0;
 
     // a client in an idle state move to request
-    s0 -> r1 i/i;     
-    s0 -> r1 r/r;     
-    s0 -> r1 r/r;     
+    s0 -> r1 i/i;
+    s0 -> r1 r/r;
+    s0 -> r1 r/r;
 
     r1 -> r1 i/i;
     r1 -> r1 r/r;
     r1 -> r1 c/c;
-    
+
     r1 -> r2 i/r;
 
     r2 -> r2 i/i;

@@ -1,7 +1,7 @@
 // LR-philo.txt
 // Left-Right (deterministic) Dining Philosopher Protocol
 // Leters:
-// T - Thinking 
+// T - Thinking
 // L - Left fork, no right fork
 // R - no left fork, Right fork
 // E - both forks held
@@ -10,7 +10,7 @@
 // right first, and then left. The other philosophers pick up the left fork
 // first.
 
-// Assumption: at least three philosophers. 
+// Assumption: at least three philosophers.
 Initial {
     init: s0;
 
