@@ -1,0 +1,370 @@
+// Dijkstra-ring.txt
+// We model this protocol as described in "Reachability Sets of
+// Parametrized Rings As Regular Languages" by Laurent Fribourg and Hans Olsen.
+//
+// Each state of a ring component is a triple of the form qXYZ where: X is 0, 1 or 2
+// (0 stands for `waiting', 1 for `idle', 2 for `in critical section'), Y is 0 or 1
+// (0 stands for `empty', 1 for `with token'), Z is 0 or 1 (0 stands for `white', 1 for `black').
+
+// at least two processes at beginning
+Initial {
+    init: s0;
+
+    s0 -> s1 q110;
+    s1 -> s2 q100;
+    s2 -> s2 q100;
+
+    accepting: s2;
+}
+
+closedUnderTransitions;
+
+Transition {
+    init: s0;
+
+    s0 -> r1;
+
+    // change from idle in black to waiting in black
+    r1 -> r1 q000/q000;
+    r1 -> r1 q001/q001;
+    r1 -> r1 q010/q010;
+    r1 -> r1 q011/q011;
+
+    r1 -> r1 q100/q100;
+    r1 -> r1 q101/q101;
+    r1 -> r1 q110/q110;
+    r1 -> r1 q111/q111;
+
+    r1 -> r1 q200/q200;
+    r1 -> r1 q201/q201;
+    r1 -> r1 q210/q210;
+    r1 -> r1 q211/q211;
+
+    r1 -> t1 q101/q001;
+
+    t1 -> t1 q000/q000;
+    t1 -> t1 q001/q001;
+    t1 -> t1 q010/q010;
+    t1 -> t1 q011/q011;
+
+    t1 -> t1 q100/q100;
+    t1 -> t1 q101/q101;
+    t1 -> t1 q110/q110;
+    t1 -> t1 q111/q111;
+
+    t1 -> t1 q200/q200;
+    t1 -> t1 q201/q201;
+    t1 -> t1 q210/q210;
+    t1 -> t1 q211/q211;
+
+    s0 -> r2;
+
+    // change from waiting with token to CS
+    r2 -> r2 q000/q000;
+    r2 -> r2 q001/q001;
+    r2 -> r2 q010/q010;
+    r2 -> r2 q011/q011;
+
+    r2 -> r2 q100/q100;
+    r2 -> r2 q101/q101;
+    r2 -> r2 q110/q110;
+    r2 -> r2 q111/q111;
+
+    r2 -> r2 q200/q200;
+    r2 -> r2 q201/q201;
+    r2 -> r2 q210/q210;
+    r2 -> r2 q211/q211;
+
+    r2 -> t1 q010/q210;
+    r2 -> t1 q011/q211;
+
+    s0 -> r3;
+
+    // change from CS to idle
+    r3 -> r3 q000/q000;
+    r3 -> r3 q001/q001;
+    r3 -> r3 q010/q010;
+    r3 -> r3 q011/q011;
+
+    r3 -> r3 q100/q100;
+    r3 -> r3 q101/q101;
+    r3 -> r3 q110/q110;
+    r3 -> r3 q111/q111;
+
+    r3 -> r3 q200/q200;
+    r3 -> r3 q201/q201;
+    r3 -> r3 q210/q210;
+    r3 -> r3 q211/q211;
+
+    r3 -> t1 q200/q100;
+    r3 -> t1 q201/q101;
+    r3 -> t1 q210/q110;
+    r3 -> t1 q211/q111;
+
+    s0 -> r4;
+
+    r4 -> r4 q000/q000;
+    r4 -> r4 q001/q001;
+    r4 -> r4 q010/q010;
+    r4 -> r4 q011/q011;
+
+    r4 -> r4 q100/q100;
+    r4 -> r4 q101/q101;
+    r4 -> r4 q110/q110;
+    r4 -> r4 q111/q111;
+
+    r4 -> r4 q200/q200;
+    r4 -> r4 q201/q201;
+    r4 -> r4 q210/q210;
+    r4 -> r4 q211/q211;
+
+    r4 -> s1 q000/q001;
+    r4 -> s1 q010/q011;
+    r4 -> s1 q100/q101;
+    r4 -> s1 q110/q111;
+
+    s1 -> t1 q100/q000;
+
+    s0 -> r41;
+
+    r41 -> s2 q100/q000;
+
+    s2 -> s2 q000/q000;
+    s2 -> s2 q001/q001;
+    s2 -> s2 q010/q010;
+    s2 -> s2 q011/q011;
+
+    s2 -> s2 q100/q100;
+    s2 -> s2 q101/q101;
+    s2 -> s2 q110/q110;
+    s2 -> s2 q111/q111;
+
+    s2 -> s2 q200/q200;
+    s2 -> s2 q201/q201;
+    s2 -> s2 q210/q210;
+    s2 -> s2 q211/q211;
+
+    s2 -> t2 q000/q001;
+    s2 -> t2 q010/q011;
+    s2 -> t2 q100/q101;
+    s2 -> t2 q110/q111;
+
+    s0 -> r5;
+
+    r5 -> r5 q000/q000;
+    r5 -> r5 q001/q001;
+    r5 -> r5 q010/q010;
+    r5 -> r5 q011/q011;
+
+    r5 -> r5 q100/q100;
+    r5 -> r5 q101/q101;
+    r5 -> r5 q110/q110;
+    r5 -> r5 q111/q111;
+
+    r5 -> r5 q200/q200;
+    r5 -> r5 q201/q201;
+    r5 -> r5 q210/q210;
+    r5 -> r5 q211/q211;
+
+    r5 -> s3 q111/q100;
+
+    s3 -> t1 q000/q010;
+    s3 -> t1 q001/q011;
+    s3 -> t1 q100/q110;
+    s3 -> t1 q101/q111;
+
+    s0 -> r51;
+
+    r51 -> s4 q000/q010;
+    r51 -> s4 q001/q011;
+    r51 -> s4 q100/q110;
+    r51 -> s4 q101/q111;
+
+    s4 -> s4 q000/q000;
+    s4 -> s4 q001/q001;
+    s4 -> s4 q010/q010;
+    s4 -> s4 q011/q011;
+
+    s4 -> s4 q100/q100;
+    s4 -> s4 q101/q101;
+    s4 -> s4 q110/q110;
+    s4 -> s4 q111/q111;
+
+    s4 -> s4 q200/q200;
+    s4 -> s4 q201/q201;
+    s4 -> s4 q210/q210;
+    s4 -> s4 q211/q211;
+
+    s4 -> t1 q111/q100;
+
+    s0 -> r6;
+
+    r6 -> r6 q000/q000;
+    r6 -> r6 q001/q001;
+    r6 -> r6 q010/q010;
+    r6 -> r6 q011/q011;
+
+    r6 -> r6 q100/q100;
+    r6 -> r6 q101/q101;
+    r6 -> r6 q110/q110;
+    r6 -> r6 q111/q111;
+
+    r6 -> r6 q200/q200;
+    r6 -> r6 q201/q201;
+    r6 -> r6 q210/q210;
+    r6 -> r6 q211/q211;
+
+    r6 -> s5 q000/q001;
+    r6 -> s5 q010/q011;
+    r6 -> s5 q100/q101;
+    r6 -> s5 q110/q111;
+
+    s5 -> t1 q001/q001;
+    s5 -> t1 q101/q101;
+
+    s0 -> r61;
+
+    r61 -> s6 q001/q001;
+    r61 -> s6 q101/q101;
+
+    s6 -> s6 q000/q000;
+    s6 -> s6 q001/q001;
+    s6 -> s6 q010/q010;
+    s6 -> s6 q011/q011;
+
+    s6 -> s6 q100/q100;
+    s6 -> s6 q101/q101;
+    s6 -> s6 q110/q110;
+    s6 -> s6 q111/q111;
+
+    s6 -> s6 q200/q200;
+    s6 -> s6 q201/q201;
+    s6 -> s6 q210/q210;
+    s6 -> s6 q211/q211;
+
+    s6 -> t2 q000/q001;
+    s6 -> t2 q010/q011;
+    s6 -> t2 q100/q101;
+    s6 -> t2 q110/q111;
+
+    s0 -> r7;
+
+    // change from idle with token to CS
+    r7 -> r7 q000/q000;
+    r7 -> r7 q001/q001;
+    r7 -> r7 q010/q010;
+    r7 -> r7 q011/q011;
+
+    r7 -> r7 q100/q100;
+    r7 -> r7 q101/q101;
+    r7 -> r7 q110/q110;
+    r7 -> r7 q111/q111;
+
+    r7 -> r7 q200/q200;
+    r7 -> r7 q201/q201;
+    r7 -> r7 q210/q210;
+    r7 -> r7 q211/q211;
+
+    r7 -> t1 q110/q210;
+
+    s0 -> r8;
+
+    r8 -> r8 q000/q000;
+    r8 -> r8 q001/q001;
+    r8 -> r8 q010/q010;
+    r8 -> r8 q011/q011;
+
+    r8 -> r8 q100/q100;
+    r8 -> r8 q101/q101;
+    r8 -> r8 q110/q110;
+    r8 -> r8 q111/q111;
+
+    r8 -> r8 q200/q200;
+    r8 -> r8 q201/q201;
+    r8 -> r8 q210/q210;
+    r8 -> r8 q211/q211;
+
+    r8 -> s7 q001/q001;
+    r8 -> s7 q011/q011;
+    r8 -> s7 q101/q101;
+    r8 -> s7 q111/q111;
+
+    s7 -> t1 q100/q000;
+
+    s0 -> r81;
+
+    r81 -> s8 q100/q000;
+
+    s8 -> s8 q000/q000;
+    s8 -> s8 q001/q001;
+    s8 -> s8 q010/q010;
+    s8 -> s8 q011/q011;
+
+    s8 -> s8 q100/q100;
+    s8 -> s8 q101/q101;
+    s8 -> s8 q110/q110;
+    s8 -> s8 q111/q111;
+
+    s8 -> s8 q200/q200;
+    s8 -> s8 q201/q201;
+    s8 -> s8 q210/q210;
+    s8 -> s8 q211/q211;
+
+    s8 -> t2 q001/q001;
+    s8 -> t2 q011/q011;
+    s8 -> t2 q101/q101;
+    s8 -> t2 q111/q111;
+
+    accepting: t1, t2;
+}
+
+// two processes in the CS at the same time
+Bad {
+    init: s0;
+
+    s0 -> s0 q000;
+    s0 -> s0 q001;
+    s0 -> s0 q010;
+    s0 -> s0 q011;
+    s0 -> s0 q100;
+    s0 -> s0 q101;
+    s0 -> s0 q110;
+    s0 -> s0 q111;
+    s0 -> s1 q200;
+    s0 -> s1 q201;
+    s0 -> s1 q210;
+    s0 -> s1 q211;
+
+    s1 -> s1 q000;
+    s1 -> s1 q001;
+    s1 -> s1 q010;
+    s1 -> s1 q011;
+    s1 -> s1 q100;
+    s1 -> s1 q101;
+    s1 -> s1 q110;
+    s1 -> s1 q111;
+    s1 -> s2 q200;
+    s1 -> s2 q201;
+    s1 -> s2 q210;
+    s1 -> s2 q211;
+
+    s2 -> s2 q000;
+    s2 -> s2 q001;
+    s2 -> s2 q010;
+    s2 -> s2 q011;
+    s2 -> s2 q100;
+    s2 -> s2 q101;
+    s2 -> s2 q110;
+    s2 -> s2 q111;
+    s2 -> s2 q200;
+    s2 -> s2 q201;
+    s2 -> s2 q210;
+    s2 -> s2 q211;
+
+    accepting: s2;
+}
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 10;
+automatonStateGuessing: 0 .. 4;
