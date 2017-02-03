@@ -95,7 +95,7 @@ public class Main {
             invariant = AutomataConverter.pruneUnreachableStates(invariant);
             Map<Integer, String> indexToLabel = problem.getIndexToLabel();
             System.err.print("\nL-star successfully found an invariant!\n");
-            System.out.println("VERDICT: Bad configurations are not reachable from every " +
+            System.out.println("VERDICT: Bad configurations are not reachable from any " +
                     (problem.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
             System.out.println();
             System.out.println("// Configurations visited in the game are contained in");
