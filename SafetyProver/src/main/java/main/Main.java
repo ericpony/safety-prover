@@ -52,15 +52,17 @@ public class Main {
         } else if (in.isDirectory()) {
             modelFiles = in.listFiles();
         } else {
-            System.out.println("Input is not valid.");
+            System.out.println("Input model is not valid.");
             return;
         }
         for (File modelFile : modelFiles) {
             if (!modelFile.isFile()) continue;
             if (modelFile.getName().charAt(0) == '_') continue;
             System.out.println("Checking " + modelFile.getName() + "...");
+            long startTime = System.nanoTime();
             checkModel(modelFile.getAbsolutePath());
-            break;
+            int elapsedTime = (int) ((System.nanoTime() - startTime) / 1e9);
+            System.out.println("Elapsed time for " + modelFile.getName() + " : " + elapsedTime + " seconds.");
         }
     }
 
