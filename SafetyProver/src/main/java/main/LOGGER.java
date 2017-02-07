@@ -24,5 +24,9 @@ public class LOGGER {
         LOGGER.debug(msg);
         //System.err.println(msg);
     }
+
+    public static void info(Object msg) {
+        //System.err.println(msg);
+    }
 }
 

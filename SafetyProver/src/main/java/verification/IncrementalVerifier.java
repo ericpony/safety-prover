@@ -129,7 +129,7 @@ public class IncrementalVerifier {
         finiteStates = new FiniteStateSets(problem.getI(), problem.getT(), problem.getB());
 
         if (preComputeReachable) {
-            Learner learner = new LStar();
+            Learner learner = new LStarLearner();
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
                     problem.getI(), problem.getB(), problem.getT());
             systemInvariant = MonolithicLearning.inferWith(learner, teacher);

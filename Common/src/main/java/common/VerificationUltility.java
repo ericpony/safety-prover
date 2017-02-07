@@ -519,7 +519,7 @@ public class VerificationUltility {
         final Set<Integer> acceptingA = A.getAcceptingStateIds();
         final Set<Integer> acceptingB = B.getAcceptingStateIds();
 
-        assert (!complementB || B.isDFA());
+        if (complementB && !B.isDFA()) throw new IllegalStateException("The second automaton mush be a DFA.");
 
         final List<IntPair> newStates = new ArrayList<IntPair>();
         final Map<IntPair, Integer> stateId = new HashMap<IntPair, Integer>();

@@ -5,6 +5,7 @@ import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.language.InclusionCheckingImpl;
 import de.libalf.LibALFFactory;
 import encoding.ISatSolverFactory;
 import encoding.SatSolver;
@@ -12,8 +13,6 @@ import grammar.Yylex;
 import grammar.parser;
 import learning.*;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import verification.IncrementalVerifier;
 import verification.MonolithicVerifier;
@@ -28,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Main {
-    private static final Logger LOGGER = LogManager.getLogger();
+//    private static final Logger LOGGER = LogManager.getLogger();
 
     private static final ISatSolverFactory SOLVER_FACTORY =
             //MinisatSolver.FACTORY;            // Minisat
@@ -88,11 +87,16 @@ public class Main {
         }
 
         if (problem.getPrecomputedInv()) {
-//            Learner learner = new LStar();
-            Learner learner = new LibALFLearner(LibALFFactory.Algorithm.ANGLUIN);
-            Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
-                    problem.getI(), problem.getB(), problem.getT());
-            Automata invariant = MonolithicLearning.inferWith(learner, teacher);
+            Automata invariant;
+            if (true) {
+                //Learner learner = new LStarLearner();
+                Learner learner = new LibALFLearner(LibALFFactory.Algorithm.ANGLUIN);
+                Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
+                        problem.getI(), problem.getB(), problem.getT());
+                invariant = MonolithicLearning.inferWith(learner, teacher);
+            } else {
+                invariant = findReachabilitySet(problem.getI(), problem.getT());
+            }
             //invariant = AutomataConverter.toMinimalDFA(invariant);
             invariant = AutomataConverter.pruneUnreachableStates(invariant);
             Map<Integer, String> indexToLabel = problem.getIndexToLabel();
@@ -102,7 +106,6 @@ public class Main {
             System.out.println();
             System.out.println("// Configurations visited in the game are contained in");
             System.out.println(invariant.prettyPrint("Invariant", indexToLabel));
-
         } else if (problem.getCloseInitStates() && !problem.getAlwaysMonolithic()) {
             IncrementalVerifier verifier =
                     new IncrementalVerifier(problem, SOLVER_FACTORY,
@@ -116,6 +119,30 @@ public class Main {
                     (problem, SOLVER_FACTORY, problem.getUseRankingFunctions());
             verifier.verify();
         }
+    }
+
+    static Automata findReachabilitySet(Automata I, EdgeWeightedDigraph T) {
+        Automata reachable = I;
+        Automata newConfig = reachable;
+        while (true) {
+            Automata post = AutomataConverter.minimiseAcyclic(
+                    VerificationUltility.getImage(newConfig, T));
+
+            newConfig = AutomataConverter.minimiseAcyclic(
+                    VerificationUltility.getDifference(post, reachable));
+
+            LOGGER.debug("reachable " + reachable.getStates().length + ", new " + newConfig.getStates().length);
+            //LOGGER.debug("reachable:\n" + reachable);
+            //LOGGER.debug("new:\n" + newConfig);
+
+            if (new InclusionCheckingImpl().isSubSetOf(
+                    newConfig, AutomataConverter.toCompleteDFA(reachable)))
+                break;
+
+            reachable = AutomataConverter.minimiseAcyclic(
+                    VerificationUltility.getUnion(reachable, post));
+        }
+        return reachable;
     }
 
     public static RegularModel parse(String fileName) {

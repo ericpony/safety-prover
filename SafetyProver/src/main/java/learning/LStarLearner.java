@@ -5,7 +5,7 @@ import common.finiteautomata.State;
 
 import java.util.*;
 
-public class LStar extends Learner {
+public class LStarLearner extends Learner {
 
     private Automata solution;
     private Node classTree;

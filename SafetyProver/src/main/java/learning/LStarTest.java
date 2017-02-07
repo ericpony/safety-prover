@@ -56,7 +56,7 @@ public class LStarTest {
                 return true;
             }
         };
-        final LStar lstar = new LStar();
+        final LStarLearner lstar = new LStarLearner();
         lstar.setTeacher(teacher);
         lstar.solve();
     }
