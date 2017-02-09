@@ -1,8 +1,9 @@
 package verification;
 
-import common.VerificationUltility;
 import common.finiteautomata.Automata;
 import encoding.ISatSolverFactory;
+import learning.SatInvariantNotFoundException;
+import learning.Timer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import visitor.RegularModel;
@@ -12,9 +13,6 @@ public class MonolithicVerifier {
 
     private final ISatSolverFactory SOLVER_FACTORY;
     private final boolean useRankingFunctions;
-
-    private static final boolean useGlobalSystemInvariant = false;
-
     private final RegularModel problem;
 
     public MonolithicVerifier(RegularModel problem,
@@ -25,7 +23,8 @@ public class MonolithicVerifier {
         this.useRankingFunctions = useRankingFunctions;
     }
 
-    public boolean verify() {
+    public Automata verify()
+            throws Timer.TimeoutException {
         LOGGER.info("Constructing monolithic advice bits");
 
         int bound = problem.getMaxNumOfStatesTransducer() * problem.getMaxNumOfStatesTransducer() +
@@ -37,12 +36,6 @@ public class MonolithicVerifier {
         }
 
         OldCounterExamples oldCEs = new OldCounterExamples();
-        FiniteStateSets finiteStates = new FiniteStateSets(problem.getI(), problem.getT(), problem.getB());
-
-        Automata systemInvariant = null;
-        if (useGlobalSystemInvariant) {
-            systemInvariant = VerificationUltility.getUniversalAutomaton(problem.getNumberOfLetters());
-        }
 
         for (int fixedSOS = 1; fixedSOS <= bound; ++fixedSOS) {
             for (int numStateTransducer = problem.getMinNumOfStatesTransducer();
@@ -72,29 +65,29 @@ public class MonolithicVerifier {
                                 problem.getCloseInitStates(),
                                 true,
                                 SOLVER_FACTORY);
+                        checking.setB(problem.getB());
+                        checking.setI(problem.getI());
+                        checking.setT(problem.getT());
                         checking.setAutomataNumStates(numStateAutomata);
-                        checking.setF(problem.getB());
-                        checking.setWinningStates(problem.getB());
-                        checking.setI0(problem.getI());
                         checking.setNumLetters(problem.getNumberOfLetters());
-//                        checking.setPlayer1(problem.getPlayer1());
-                        checking.setPlayer2(problem.getT());
                         checking.setTransducerNumStates(numStateTransducer);
                         checking.setLabelToIndex(problem.getLabelToIndex());
                         checking.setOldCounterExamples(oldCEs);
-                        checking.setFiniteStateSets(finiteStates);
-                        checking.setSystemInvariant(systemInvariant);
-
                         checking.setup();
-
-                        if (checking.findNextSolution(true)) return true;
-
-                        systemInvariant = checking.getSystemInvariant();
+                        Automata invariant = checking.findNextSolution();
+                        if (invariant != null) return invariant;
                     }
                 }
             }
         }
-        return false;
+        SatInvariantNotFoundException ex = new SatInvariantNotFoundException();
+        ex.setMaxNumOfStatesTransducer(problem.getMaxNumOfStatesTransducer());
+        ex.setMaxNumOfStatesAutomaton(problem.getMaxNumOfStatesAutomaton());
+        ex.setMaxNumOfInitStatesAutomaton(problem.getMaxNumOfInitStatesAutomaton());
+        ex.setMinNumOfStatesTransducer(problem.getMinNumOfStatesTransducer());
+        ex.setMinNumOfStatesAutomaton(problem.getMinNumOfStatesAutomaton());
+        ex.setMinNumOfInitStatesAutomaton(problem.getMinNumOfInitStatesAutomaton());
+        throw ex;
     }
 }
 

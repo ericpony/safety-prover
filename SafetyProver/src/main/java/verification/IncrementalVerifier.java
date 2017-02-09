@@ -335,87 +335,82 @@ public class IncrementalVerifier {
 
         public void run() {
             LOGGER.debug("computing new progress relation for one of " + elimWords);
+            try {
+                OldCounterExamples oldCEs = new OldCounterExamples();
 
-            OldCounterExamples oldCEs = new OldCounterExamples();
-
-            sosLoop:
-            for (int fixedSOS = 1;
-                 fixedSOS <= sosBound;
-                 ++fixedSOS) {
-                for (int numStateTransducer = problem.getMinNumOfStatesTransducer();
-                     numStateTransducer <= maxNumStatesTransducer;
-                     numStateTransducer++) {
-                    for (int numStateAutomata = problem.getMinNumOfStatesAutomaton();
-                         numStateAutomata <= problem.getMaxNumOfStatesAutomaton();
-                         numStateAutomata++) {
-
-                        if (stopped) {
-                            LOGGER.debug("stopped");
-                            return;
-                        }
-
-                        final int sos =
-                                numStateTransducer * numStateTransducer +
-                                        numStateAutomata * numStateAutomata;
-
-                        if (sos != fixedSOS)
-                            continue;
-
-                        checking =
-                                createReachabilityChecking(useRankingFunctions,
-                                        numStateAutomata,
-                                        numStateTransducer,
-                                        oldCEs,
-                                        localInvariant);
-
-                        checking.setup();
-                        checking.addDisjBMembershipConstraint(elimWords);
-
-                        if (checking.findNextSolution(false)) {
-                            B = checking.getAutomatonB();
-                            transducer = checking.getTransducer();
-
-                            // can the solution be made more general?
-                            if (maximiseProgressRelations)
-                                while (true) {
-                                    final List<List<Integer>> remElimWords =
-                                            new ArrayList<List<Integer>>();
-                                    for (List<Integer> w : elimWords) {
-                                        if (B.accepts(w))
-                                            checking.addBMembershipConstraint(w);
-                                        else
-                                            remElimWords.add(w);
-                                    }
-
-                                    if (remElimWords.isEmpty())
-                                        break;
-
-                                    LOGGER.debug("trying to cover also one of " + remElimWords);
-
-                                    checking.addDisjBMembershipConstraint(remElimWords);
-                                    if (checking.findNextSolution(false)) {
-                                        B = checking.getAutomatonB();
-                                        transducer = checking.getTransducer();
-                                    } else
-                                        break;
-                                }
+                sosLoop:
+                for (int fixedSOS = 1;
+                     fixedSOS <= sosBound;
+                     ++fixedSOS) {
+                    for (int numStateTransducer = problem.getMinNumOfStatesTransducer();
+                         numStateTransducer <= maxNumStatesTransducer;
+                         numStateTransducer++) {
+                        for (int numStateAutomata = problem.getMinNumOfStatesAutomaton();
+                             numStateAutomata <= problem.getMaxNumOfStatesAutomaton();
+                             numStateAutomata++) {
 
                             if (stopped) {
                                 LOGGER.debug("stopped");
                                 return;
                             }
 
-                            localInvariant = checking.getSystemInvariant();
-                            LOGGER.debug("found new progress relation!");
-                            callFinished();
-                            return;
-                        }
+                            final int sos =
+                                    numStateTransducer * numStateTransducer +
+                                            numStateAutomata * numStateAutomata;
 
-                        localInvariant = checking.getSystemInvariant();
+                            if (sos != fixedSOS)
+                                continue;
+
+                            checking =
+                                    createReachabilityChecking(useRankingFunctions,
+                                            numStateAutomata,
+                                            numStateTransducer,
+                                            oldCEs,
+                                            localInvariant);
+
+                            checking.setup();
+                            checking.addDisjBMembershipConstraint(elimWords);
+
+                            if (checking.findNextSolution() != null) {
+                                B = checking.getInvariant();
+
+                                // can the solution be made more general?
+                                if (maximiseProgressRelations)
+                                    while (true) {
+                                        final List<List<Integer>> remElimWords =
+                                                new ArrayList<List<Integer>>();
+                                        for (List<Integer> w : elimWords) {
+                                            if (B.accepts(w))
+                                                checking.addBMembershipConstraint(w);
+                                            else
+                                                remElimWords.add(w);
+                                        }
+
+                                        if (remElimWords.isEmpty())
+                                            break;
+
+                                        LOGGER.debug("trying to cover also one of " + remElimWords);
+
+                                        checking.addDisjBMembershipConstraint(remElimWords);
+                                        if (checking.findNextSolution() != null) {
+                                            B = checking.getInvariant();
+                                        } else
+                                            break;
+                                    }
+
+                                if (stopped) {
+                                    LOGGER.debug("stopped");
+                                    return;
+                                }
+                                LOGGER.debug("found new progress relation!");
+                                callFinished();
+                                return;
+                            }
+                        }
                     }
                 }
+            } catch (Timer.TimeoutException e) {
             }
-
             LOGGER.debug("giving up");
         }
 
@@ -475,45 +470,43 @@ public class IncrementalVerifier {
 
         public void run() {
             LOGGER.debug("reusing relation for one of " + elimWords);
+            try {
+                OldCounterExamples oldCEs = new OldCounterExamples();
 
-            OldCounterExamples oldCEs = new OldCounterExamples();
+                for (int numStateAutomata = 1;
+                     numStateAutomata <= maxNumStatesAutomaton;
+                     numStateAutomata++) {
 
-            for (int numStateAutomata = 1;
-                 numStateAutomata <= maxNumStatesAutomaton;
-                 numStateAutomata++) {
+                    if (stopped) {
+                        LOGGER.debug("stopped");
+                        return;
+                    }
 
-                if (stopped) {
-                    LOGGER.debug("stopped");
-                    return;
+                    checking =
+                            createReachabilityChecking(false, numStateAutomata,
+                                    relation.V(), oldCEs,
+                                    systemInvariant);
+
+                    checking.setup();
+                    checking.addDisjBMembershipConstraint(elimWords);
+                    checking.fixTransducer(relation);
+
+
+                    if (checking.findNextSolution() != null) {
+                        LOGGER.debug("could reuse progress relation!");
+                        callFinished();
+                        return;
+                    }
                 }
-
-                checking =
-                        createReachabilityChecking(false, numStateAutomata,
-                                relation.V(), oldCEs,
-                                systemInvariant);
-
-                checking.setup();
-                checking.addDisjBMembershipConstraint(elimWords);
-                checking.fixTransducer(relation);
-
-
-                if (checking.findNextSolution(false)) {
-                    localInvariant = checking.getSystemInvariant();
-                    LOGGER.debug("could reuse progress relation!");
-                    callFinished();
-                    return;
-                }
-
-                localInvariant = checking.getSystemInvariant();
+            } catch (Timer.TimeoutException e) {
             }
-
             LOGGER.debug("giving up");
         }
 
         public void copyBackResults() {
             // augment the set of winning states and continue
             // with the next configuration
-            augmentWinningStates(checking, checking.getAutomatonB(), relation);
+            augmentWinningStates(checking, checking.getInvariant(), relation);
 
             // move successful relation to the beginning
             distinctRelations.remove(relationNum);
@@ -539,16 +532,12 @@ public class IncrementalVerifier {
         ReachabilityChecking checking =
                 new ReachabilityChecking(useRF, false, false, SOLVER_FACTORY);
         checking.setAutomataNumStates(numStateAutomata);
-        checking.setF(problem.getB());
-        checking.setWinningStates(winningStates);
-        checking.setI0(problem.getI());
         checking.setNumLetters(problem.getNumberOfLetters());
-//        checking.setPlayer1(problem.getPlayer1());
-        checking.setPlayer2(problem.getT());
+        checking.setB(problem.getB());
+        checking.setI(problem.getI());
+        checking.setT(problem.getT());
         checking.setLabelToIndex(problem.getLabelToIndex());
         checking.setOldCounterExamples(oldCEs);
-        checking.setFiniteStateSets(finiteStates);
-        checking.setSystemInvariant(systemInvariant);
         checking.setTransducerNumStates(numStateTransducer);
 
         return checking;
@@ -585,8 +574,6 @@ public class IncrementalVerifier {
                 B.getStates().length);
         LOGGER.info("extending winning set, now have " +
                 chosenBs.size() + " (Bi, Ti) pairs");
-
-        systemInvariant = checking.getSystemInvariant();
     }
 
     ////////////////////////////////////////////////////////////////////////////

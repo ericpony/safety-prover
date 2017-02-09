@@ -14,7 +14,6 @@ import grammar.parser;
 import learning.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
-import verification.IncrementalVerifier;
 import verification.MonolithicVerifier;
 import visitor.AllVisitorImpl;
 import visitor.RegularModel;
@@ -23,25 +22,28 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
-import java.util.List;
 import java.util.Map;
 
 public class Main {
-//    private static final Logger LOGGER = LogManager.getLogger();
+    //    private static final Logger LOGGER = LogManager.getLogger();
+    public enum Mode {
+        HOMEBREW,
+        FIXEDPOINT,
+        ANGLUIN,
+        SAT_CEGAR
+    }
 
     private static final ISatSolverFactory SOLVER_FACTORY =
-            //MinisatSolver.FACTORY;            // Minisat
-            SatSolver.FACTORY;                // Sat4j
+            //MinisatSolver.FACTORY;    // Minisat
+            SatSolver.FACTORY;          // Sat4j
     //LingelingSolver.FACTORY;          // Lingeling
-
-    private final static boolean verifySolutions = false;
 
     /// directory name of the output
     private final static String OUTPUT_DIR = "output";
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("No input, doing nothing.");
+            System.err.println("No input, doing nothing.");
             return;
         }
         File in = new File(args[0]);
@@ -51,23 +53,36 @@ public class Main {
         } else if (in.isDirectory()) {
             modelFiles = in.listFiles();
         } else {
-            System.out.println("Input model is not valid.");
+            System.err.println("Input file is not a valid model.");
             return;
         }
+
+        final int timeout = 60;  // 60 seconds
+        final Mode mode = Mode.FIXEDPOINT;
+//        LOGGER.setLevel(Level.OFF);
+
+        Timer.setMilliTimeout(timeout * 1000);
         for (File modelFile : modelFiles) {
             if (!modelFile.isFile()) continue;
-            if (modelFile.getName().charAt(0) == '_') continue;
+            char c = modelFile.getName().charAt(0);
+            if (c == '_' || c == '.') continue;
             System.out.println("Checking " + modelFile.getName() + "...");
-            long startTime = System.nanoTime();
-            checkModel(modelFile.getAbsolutePath());
-            int elapsedTime = (int) ((System.nanoTime() - startTime) / 1e9);
-            System.out.println("Elapsed time for " + modelFile.getName() + " : " + elapsedTime + " seconds.");
+            try {
+                long elapsedTime = checkModel(modelFile.getAbsolutePath(), mode);
+                int millisec = (int) (elapsedTime / 1e6);
+                System.out.println("Elapsed time for " + modelFile.getName() + " : " + millisec + " ms.");
+            } catch (Timer.TimeoutException e) {
+                System.out.println("Timeout proving " + modelFile.getName() + " within " + timeout + " seconds.");
+            } catch (SatInvariantNotFoundException e) {
+                System.out.println(e);
+            }
         }
     }
 
-    static void checkModel(String fileName) {
-        RegularModel problem = parse(fileName);
-
+    static long checkModel(String filePath, Mode mode)
+            throws Timer.TimeoutException {
+        RegularModel problem = parse(filePath);
+        String fileName = new File(filePath).getName();
         if (problem.getLogLevel() <= 0)
             Configurator.setRootLevel(Level.ERROR);
         else if (problem.getLogLevel() == 1)
@@ -79,69 +94,82 @@ public class Main {
 
         determize(problem);
 
-        Automata lang = VerificationUltility.getIntersection(problem.getB(), problem.getI());
-        List<Integer> cex = AutomataConverter.getSomeWord(lang);
-        if (cex != null) {
-            System.out.println("VERDICT: Bad configurations intersect initial configurations.");
-            return;
-        }
         Map<Integer, String> indexToLabel = problem.getIndexToLabel();
         NoInvariantException.setIndexToLabelMapping(indexToLabel);
-        if (problem.getPrecomputedInv()) {
-            Automata invariant;
-            if (true) {
-                //Learner learner = new LStarLearner();
-                Learner learner = new LibALFLearner(LibALFFactory.Algorithm.ANGLUIN);
+        Automata invariant = null;
+        //if(problem.getPrecomputedInv()) {
+        Timer.start();
+        switch (mode) {
+            case HOMEBREW:
+                Learner learner = new LStarLearner();
                 Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
                         problem.getI(), problem.getB(), problem.getT());
                 invariant = MonolithicLearning.inferWith(learner, teacher);
-            } else {
-                invariant = findReachabilitySet(problem.getI(), problem.getT());
-            }
-            //invariant = AutomataConverter.toMinimalDFA(invariant);
-            invariant = AutomataConverter.pruneUnreachableStates(invariant);
-
-            System.err.print("\nL-star successfully found an invariant!\n");
-            System.out.println("VERDICT: Bad configurations are not reachable from any " +
-                    (problem.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
-            System.out.println();
-            System.out.println("// Configurations visited in the game are contained in");
-            System.out.println(invariant.prettyPrint("Invariant", indexToLabel));
-        } else if (problem.getCloseInitStates() && !problem.getAlwaysMonolithic()) {
-            IncrementalVerifier verifier =
-                    new IncrementalVerifier(problem, SOLVER_FACTORY,
-                            problem.getUseRankingFunctions(),
-                            problem.getPrecomputedInv(),
-                            verifySolutions);
-            verifier.setup();
-            verifier.verify();
-        } else {
-            MonolithicVerifier verifier = new MonolithicVerifier
-                    (problem, SOLVER_FACTORY, problem.getUseRankingFunctions());
-            verifier.verify();
+                break;
+            case ANGLUIN:
+                learner = new LibALFLearner(LibALFFactory.Algorithm.ANGLUIN);
+                teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
+                        problem.getI(), problem.getB(), problem.getT());
+                invariant = MonolithicLearning.inferWith(learner, teacher);
+                break;
+            case FIXEDPOINT:
+                invariant = findReachabilitySet(problem.getI(), problem.getT(), indexToLabel);
+                break;
+            case SAT_CEGAR:
+                MonolithicVerifier verifier = new MonolithicVerifier
+                        (problem, SOLVER_FACTORY, problem.getUseRankingFunctions());
+                invariant = verifier.verify();
+                break;
         }
+        Timer.stop();
+        if (invariant == null) {
+            System.err.print("\nTimeout in proving safety for " + fileName + "\n");
+        } else {
+            invariant = AutomataConverter.toMinimalDFA(invariant);
+            invariant = AutomataConverter.pruneUnreachableStates(invariant);
+            System.err.print("\nSuccessfully found an invariant for " + fileName + "\n");
+            LOGGER.debug("VERDICT: Bad configurations are not reachable from any " +
+                    (problem.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
+            LOGGER.debug("\n");
+            LOGGER.debug("// Configurations visited by the program are contained in");
+            LOGGER.debug(invariant.prettyPrint("Invariant", indexToLabel));
+        }
+        return Timer.getElapsedTime();
     }
 
-    static Automata findReachabilitySet(Automata I, EdgeWeightedDigraph T) {
+    static Automata findReachabilitySet(Automata I, EdgeWeightedDigraph T, Map<Integer, String> indexToLabel)
+            throws Timer.TimeoutException {
         Automata reachable = I;
-        Automata newConfig = reachable;
+        Automata newConfig = I;
+        LOGGER.debug(I.prettyPrint("Initial", indexToLabel));
         while (true) {
             Automata post = AutomataConverter.minimiseAcyclic(
                     VerificationUltility.getImage(newConfig, T));
 
-            newConfig = AutomataConverter.minimiseAcyclic(
-                    VerificationUltility.getDifference(post, reachable));
+            post = AutomataConverter.toMinimalDFA(post);
+            post = AutomataConverter.pruneUnreachableStates(post);
+            LOGGER.debug(post.prettyPrint("Post", indexToLabel));
+
+            Timer.tick();
+
+//            newConfig = AutomataConverter.minimiseAcyclic(
+//                    VerificationUltility.getDifference(post, reachable));
+            newConfig = post;
+
+            Timer.tick();
 
             LOGGER.debug("reachable " + reachable.getStates().length + ", new " + newConfig.getStates().length);
-            //LOGGER.debug("reachable:\n" + reachable);
-            //LOGGER.debug("new:\n" + newConfig);
 
             if (new InclusionCheckingImpl().isSubSetOf(
                     newConfig, AutomataConverter.toCompleteDFA(reachable)))
                 break;
 
+            Timer.tick();
+
             reachable = AutomataConverter.minimiseAcyclic(
                     VerificationUltility.getUnion(reachable, post));
+
+            Timer.tick();
         }
         return reachable;
     }

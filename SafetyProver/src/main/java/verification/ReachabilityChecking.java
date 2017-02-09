@@ -10,9 +10,9 @@ import common.finiteautomata.AutomataConverter;
 import elimination.CEElimination;
 import elimination.TransitivityPairSet;
 import encoding.*;
+import learning.Timer;
 import learning.Tuple;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import main.LOGGER;
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.TimeoutException;
 
@@ -20,14 +20,14 @@ import java.io.FileNotFoundException;
 import java.util.*;
 
 public class ReachabilityChecking {
-    private static final Logger LOGGER = LogManager.getLogger();
+    //private static final Logger LOGGER = LogManager.getLogger();
 
     private Map<String, Integer> labelToIndex = new HashMap<String, Integer>();
     /// directory name of the output
     private final static String OUTPUT_DIR = "output";
 
     private final boolean closeUnderTransitions;
-    private final boolean checkI0Subset;
+    private final boolean checkInitSubset;
     private final boolean lexicographicOrder;
 
     private int transducerNumStates;
@@ -35,17 +35,12 @@ public class ReachabilityChecking {
     private int numLetters;
 
     private ISatSolver solver;
-    private ISatSolverFactory solverFactory;
 
-    private Automata I0;
-    private Automata F;
-    private Automata winningStates;
-    private Automata systemInvariant;
-    private EdgeWeightedDigraph player1;
-    private EdgeWeightedDigraph player2;
+    private Automata I;
+    private Automata B;
+    private EdgeWeightedDigraph T;
 
     private OldCounterExamples oldCounterExamples;
-    private FiniteStateSets finiteStates;
 
     private AutomataEncoding automataBEncoding = null;
     private TransducerEncoding transducerEncoding = null;
@@ -64,13 +59,12 @@ public class ReachabilityChecking {
 
     public ReachabilityChecking(boolean lexOrder,
                                 boolean closeUnderTransitions,
-                                boolean checkI0Subset,
+                                boolean checkInitSubset,
                                 ISatSolverFactory solverFactory) {
         solver = solverFactory.spawnSolver();
-        this.solverFactory = solverFactory;
         this.lexicographicOrder = lexOrder;
         this.closeUnderTransitions = closeUnderTransitions;
-        this.checkI0Subset = checkI0Subset;
+        this.checkInitSubset = checkInitSubset;
         this.ceElimination = new CEElimination(solver);
     }
 
@@ -99,44 +93,40 @@ public class ReachabilityChecking {
         }
     }
 
-    private Automata automatonB = null;
+    private Automata invariant = null;
 
-    public Automata getAutomatonB() {
-        return automatonB;
+    public Automata getInvariant() {
+        return invariant;
     }
 
-    private EdgeWeightedDigraph transducer = null;
-
-    public EdgeWeightedDigraph getTransducer() {
-        return transducer;
-    }
-
-    public boolean findNextSolution(boolean printResult) {
+    public Automata findNextSolution()
+            throws Timer.TimeoutException {
         boolean unsat = true;
         boolean success = false;
 
         try {
-            solverLoop:
             while (solver.isSatisfiable()) {
                 round += 1;
                 LOGGER.debug("Satisfiable, round " + round + ", clause num " + solver.getClauseNum());
 
                 if (stopped) {
                     LOGGER.debug("stopped");
-                    return false;
+                    return null;
                 }
 
                 unsat = false;
                 Set<Integer> modelPosVars = solver.positiveModelVars();
 
-                automatonB = BoolValToAutomaton.toAutomata(modelPosVars, automataBEncoding);
-                assert (automatonB.isDFA());
+                invariant = BoolValToAutomaton.toAutomata(modelPosVars, automataBEncoding);
+                assert (invariant.isDFA());
                 LOGGER.debug("Guess an invariant:");
-                LOGGER.debug(automatonB);
+                LOGGER.debug(invariant);
+
+                Timer.tick();
 
                 ////////////////////////////////////////////////////////
-                if (checkI0Subset) {
-                    SubsetChecking l0 = new SubsetChecking(I0, automatonB);
+                if (checkInitSubset) {
+                    SubsetChecking l0 = new SubsetChecking(I, invariant);
                     List<Integer> w = l0.check();
                     if (w != null) {
                         LOGGER.debug("Invariant does't contain all initial configurations! Counterexample:");
@@ -146,11 +136,16 @@ public class ReachabilityChecking {
                         continue;
                     }
                 }
+
+                Timer.tick();
+
                 ////////////////////////////////////////////////////////
                 if (closeUnderTransitions) {
-                    Automata aut = automatonB;
-                    Automata complementF = AutomataConverter.getComplement(F);
-                    InductivenessChecking l1 = new InductivenessChecking(aut, complementF, player2, numLetters);
+                    InductivenessChecking l1 = new InductivenessChecking(
+                            invariant,
+                            AutomataConverter.getComplement(B),
+                            T,
+                            numLetters);
                     Tuple<List<Integer>> xy = l1.check();
                     if (xy != null) {
                         LOGGER.debug("Invariant is not inductive! Counterexample:");
@@ -160,81 +155,42 @@ public class ReachabilityChecking {
                         continue;
                     }
                 }
+
+                Timer.tick();
+
                 ////////////////////////////////////////////////////////
                 // Check if invariant and bad states are disjoint
-                Automata inter = VerificationUltility.getIntersection(automatonB, F);
+                Automata inter = VerificationUltility.getIntersection(invariant, B);
                 List<Integer> cex = AutomataConverter.getSomeShortestWord(inter);
 //                List<Integer> cex = new SubsetChecking(F, AutomataConverter.getComplement(automatonB)).check();
                 if (cex != null) {
-                    if (cex.size() == 0) cex.add(Automata.EPSILON_LABEL);
                     LOGGER.debug("Invariant contain bad configurations! Counterexample:");
                     LOGGER.debug(cex);
                     solver.addClause(new int[]{-automataBEncoding.acceptWord(cex)});
                     continue;
                 }
 
+                Timer.tick();
+
                 // otherwise we are finished!
                 success = true;
-                if (printResult) {
-                    Map<Integer, String> indexToLabel = new HashMap<Integer, String>();
-                    for (Map.Entry<String, Integer> entry : labelToIndex.entrySet())
-                        indexToLabel.put(entry.getValue(), entry.getKey());
-
-                    System.out.println("VERDICT: Bad configurations are not reachable from every " +
-                            (closeUnderTransitions ? "reachable" : "initial") + " configuration.");
-                    System.out.println();
-                    System.out.println("// Configurations visited in the game are contained in");
-                    System.out.println(automatonB.prettyPrint("B", indexToLabel));
-
-                    if (systemInvariant != null) {
-                        System.out.println("// System invariant");
-                        System.out.println(systemInvariant.prettyPrint("I", indexToLabel));
-                    }
-                    //write to dot
-//                  writeToDot(automatonB, transducer);
-                }
                 break;
             }
         } catch (ContradictionException e) {
             // nothing
             LOGGER.debug(e);
-        } catch (TimeoutException e) {
+        } catch (org.sat4j.specs.TimeoutException e) {
             LOGGER.debug(e);
             throw new RuntimeException("timeout");
         }
 
         if (success) {
-            return true;
+            return invariant;
         } else {
             LOGGER.debug("No more models exist.");
         }
         if (unsat) LOGGER.debug("Unsatisfiable!");
-
-        return false;
-    }
-
-    private void strengthenSystemInvariant(List<Integer> x) {
-        OldCounterExamples oldCEs = new OldCounterExamples();
-        Automata newInv = null;
-        Automata knownInv = VerificationUltility.getIntersection(systemInvariant, AutomataConverter.getComplement(F));
-
-        for (int num = 1; num < 20 && newInv == null; ++num) {
-            RelativeInvariantSynth invSynth = new RelativeInvariantSynth
-                    (solverFactory, numLetters, I0, knownInv, player1, player2, x, oldCEs, num);
-            newInv = invSynth.infer();
-        }
-
-        systemInvariant = VerificationUltility.getIntersection(systemInvariant, newInv);
-
-        assert (systemInvariant.isDFA());
-
-        if (!systemInvariant.isCompleteDFA()) {
-            systemInvariant = AutomataConverter.toCompleteDFA(systemInvariant);
-        }
-
-        systemInvariant = AutomataConverter.toMinimalDFA(systemInvariant);
-
-        LOGGER.debug("new system invariant is " + systemInvariant);
+        return null;
     }
 
     public void addBMembershipConstraint(List<Integer> word) {
@@ -364,15 +320,10 @@ public class ReachabilityChecking {
         }
     }
 
-    private void updateWithOldCE()
-            throws ContradictionException {
+    private void updateWithOldCE() throws ContradictionException {
         //update old counter example
 
         LOGGER.debug("Updating encoding with old counter examples...");
-        for (List<List<Integer>> ce : oldCounterExamples.getProgressCEs()) {
-            ceElimination.ce4Elimination(automataBEncoding, transducerEncoding,
-                    transitivitySet, rankingFunctionEncoding, ce, winningStates, player2);
-        }
 
         for (List<List<Integer>> ce : oldCounterExamples.getTransitivityCEs()) {
             ceElimination.ce3Elimination(transducerEncoding, transitivitySet, ce);
@@ -387,21 +338,16 @@ public class ReachabilityChecking {
         }
     }
 
-    private void writeToDot(Automata automatonB,
+    private void writeToDot(Automata invariant,
                             EdgeWeightedDigraph transducer) {
         try {
-            Utility.writeOut(Utility.toDot(automatonB, labelToIndex),
-                    OUTPUT_DIR + "/automatonB.dot");
+            Utility.writeOut(Utility.toDot(invariant, labelToIndex),
+                    OUTPUT_DIR + "/invariant.dot");
             Utility.writeOut(Utility.toDot(transducer, labelToIndex),
-                    OUTPUT_DIR + "/transducerOrder.dot");
+                    OUTPUT_DIR + "/transducer.dot");
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    }
-
-    public int getTransducerNumStates() {
-        return transducerNumStates;
     }
 
     public void setTransducerNumStates(int transducerNumStates) {
@@ -416,44 +362,32 @@ public class ReachabilityChecking {
         this.numLetters = numLetters;
     }
 
-    public int getAutomataNumStates() {
-        return automataNumStates;
-    }
-
     public void setAutomataNumStates(int automataNumStates) {
         this.automataNumStates = automataNumStates;
     }
 
-    public Automata getI0() {
-        return I0;
+    public Automata getI() {
+        return I;
     }
 
-    public void setI0(Automata i0) {
-        I0 = i0;
+    public void setI(Automata init) {
+        I = init;
     }
 
-    public Automata getF() {
-        return F;
+    public Automata getB() {
+        return B;
     }
 
-    public void setF(Automata f) {
-        F = f;
+    public void setB(Automata bad) {
+        B = bad;
     }
 
-    public void setWinningStates(Automata f) {
-        winningStates = f;
+    public EdgeWeightedDigraph getT() {
+        return T;
     }
 
-    public EdgeWeightedDigraph getPlayer2() {
-        return player2;
-    }
-
-    public void setPlayer2(EdgeWeightedDigraph player2) {
-        this.player2 = player2;
-    }
-
-    public Map<String, Integer> getLabelToIndex() {
-        return labelToIndex;
+    public void setT(EdgeWeightedDigraph trans) {
+        T = trans;
     }
 
     public void setLabelToIndex(Map<String, Integer> labelToIndex) {
@@ -463,19 +397,6 @@ public class ReachabilityChecking {
     public void setOldCounterExamples(OldCounterExamples oldCounterExamples) {
         this.oldCounterExamples = oldCounterExamples;
     }
-
-    public void setFiniteStateSets(FiniteStateSets finiteStates) {
-        this.finiteStates = finiteStates;
-    }
-
-    public Automata getSystemInvariant() {
-        return systemInvariant;
-    }
-
-    public void setSystemInvariant(Automata inv) {
-        systemInvariant = inv;
-    }
-
 }
 
 // vim: tabstop=4
