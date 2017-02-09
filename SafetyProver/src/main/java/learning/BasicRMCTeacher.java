@@ -28,7 +28,7 @@ public class BasicRMCTeacher extends RMCTeacher {
         boolean isBad = getBadStates().accepts(word);
         if (isReachable && isBad) {
             LOGGER.debug("membership query: " + word);
-            throw new NoInvariantException();
+            throw new NoInvariantException(word);
         }
         boolean accepted = isReachable && !isBad;
         LOGGER.debug("membership query: " + word + " -> " + (accepted ? "accepted" : "rejected"));

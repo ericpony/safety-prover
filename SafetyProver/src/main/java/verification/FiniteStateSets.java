@@ -82,8 +82,9 @@ public class FiniteStateSets {
                 reachable = AutomataConverter.minimiseAcyclic(
                         VerificationUltility.getUnion(reachable, post));
             }
-            if (AutomataConverter.getSomeWord(VerificationUltility.getIntersection(reachable, B)) != null)
-                throw new NoInvariantException();
+
+            List<Integer> cex = AutomataConverter.getSomeWord(VerificationUltility.getIntersection(reachable, B));
+            if (cex != null) throw new NoInvariantException(cex);
 
             reachableStateAutomata.put(wordLen, reachable);
         }
