@@ -1,0 +1,257 @@
+// dining-cryptographers.txt
+// This protocol is modeled according to the description at
+// http://www.prismmodelchecker.org/casestudies/dining_crypt.php
+//
+// The first process has a state in {Even,Odd}, indicating the parity of N.
+// The state of each cryptographer is [X;Y;Z], where
+// X is in {P,N} (P for paying; N for not paying),
+// Y is in {H,T} (H for head; T for tail), and
+// Z is in {U,A,D} (U for undetermined; A for agree; D for disagree).
+
+// In an initial configuration, each cryptographer tossed a coin and
+// at most one cryptographer have paid the meal.
+Initial {
+    init: s0;
+
+    s0 -> q0 Odd; // a cryptographer paid, N is odd
+    q0 -> t1 NHU;
+    q0 -> t1 NTU;
+    t1 -> q0 NHU;
+    t1 -> q0 NTU;
+    q0 -> q1 PHU;
+    q0 -> q1 PTU;
+    q1 -> t2 NHU;
+    q1 -> t2 NTU;
+    t2 -> q1 NHU;
+    t2 -> q1 NTU;
+
+    s0 -> q3 Even; // a cryptographer paid, N is even
+    q3 -> q0 NHU;
+    q3 -> q0 NTU;
+    q3 -> t3 NHU;
+    q3 -> t3 NTU;
+    t3 -> q3 NHU;
+    t3 -> q3 NTU;
+    q3 -> q4 PHU;
+    q3 -> q4 PTU;
+    q4 -> q1 NHU;
+    q4 -> q1 NTU;
+
+    s0 -> r1 Odd; // the master paid, N is odd
+    r1 -> q1 NHU;
+    r1 -> q1 NTU;
+
+    s0 -> q1 Even; // the master paid, N is even
+
+    accepting: q1;
+}
+
+closedUnderTransitions;
+
+// In each action, exactly one cryptographer changes its state
+// from XY{U} to XY{A,D}, where X is in {P,N} and Y is in {T,H}.
+// Note that we let the cryptographers change states in turn according
+// to their positions in a configuration. Enforcing the order of actions
+// allows us to build a transducer with a smaller number of transitions.
+Transition {
+    init: s0;
+
+    s0 -> s2 Even/Even;
+    s0 -> s2 Odd/Odd;
+
+    s2 -> s2 NHA/NHA;
+    s2 -> s2 NHD/NHD;
+    s2 -> s2 NTA/NTA;
+    s2 -> s2 NTD/NTD;
+    s2 -> s2 PHA/PHA;
+    s2 -> s2 PHD/PHD;
+    s2 -> s2 PTA/PTA;
+    s2 -> s2 PTD/PTD;
+
+    s2 -> t1 PHU/PHD; // paid & head & disagree
+    t1 -> s1 NHU/NHU;
+    s1 -> s1 NHU/NHU;
+    s1 -> s1 NTU/NTU;
+    s1 -> s1 PHU/PHU;
+    s1 -> s1 PTU/PTU;
+
+    s2 -> t2 PHU/PHA; // paid & head & agree
+    t2 -> s1 NTU/NTU;
+
+    s2 -> t3 PTU/PTD; // paid & tail & disagree
+    t3 -> s1 NTU/NTU;
+
+    s2 -> t4 PTU/PTA; // paid & tail & agree
+    t4 -> s1 NHU/NHU;
+
+    s2 -> q1 NHU/NHD; // not paid & head & disagree
+    q1 -> s1 NTU/NTU;
+    q1 -> s1 PTU/PTU;
+
+    s2 -> q2 NHU/NHA; // not paid & head & agree
+    q2 -> s1 NHU/NHU;
+    q2 -> s1 PHU/PHU;
+
+    s2 -> q2 NTU/NTD; // not paid & tail & disagree
+
+    s2 -> q1 NTU/NTA; // not paid & tail & agree
+
+    s0 -> s3 Even/Even;
+    s0 -> s3 Odd/Odd;
+
+    s3 -> r0 NHD/NHD; // not paid & head
+    s3 -> r0 NHA/NHA;
+    s3 -> r0 PHD/PHD; // paid & head
+    s3 -> r0 PHA/PHA;
+
+    r0 -> r0 NHD/NHD;
+    r0 -> r0 NHA/NHA;
+    r0 -> r0 NTD/NTD;
+    r0 -> r0 NTA/NTA;
+    r0 -> r0 PHD/PHD;
+    r0 -> r0 PHA/PHA;
+    r0 -> r0 PTD/PTD;
+    r0 -> r0 PTA/PTA;
+
+    r0 -> r1 PHU/PHD; // head & disagree
+    r0 -> r1 PTU/PTA; // tail & agree
+    r0 -> r1 NHU/NHA; // head & agree
+    r0 -> r1 NTU/NTD; // tail & disagree
+
+    s3 -> r2 NTD/NTD; // not paid & tail
+    s3 -> r2 NTA/NTA;
+    s3 -> r2 PTD/PTD; // paid & tail
+    s3 -> r2 PTA/PTA;
+
+    r2 -> r2 NHD/NHD;
+    r2 -> r2 NHA/NHA;
+    r2 -> r2 NTD/NTD;
+    r2 -> r2 NTA/NTA;
+    r2 -> r2 PHD/PHD;
+    r2 -> r2 PHA/PHA;
+    r2 -> r2 PTD/PTD;
+    r2 -> r2 PTA/PTA;
+
+    r2 -> r1 PTU/PTD; // tail & disagree
+    r2 -> r1 PHU/PHA; // head & agree
+    r2 -> r1 NTU/NTA; // tail & agree
+    r2 -> r1 NHU/NHD; // head & disagree
+
+    accepting: s1, r1;
+}
+
+// The set of bad configurations is the union of the following four sets:
+// N is odd & the number of "agree"s is odd & a cryptographer paid
+// N is odd & the number of "agree"s is even & the master paid
+// N is even & the number of "agree"s is even & a cryptographer paid
+// N is even & the number of "agree"s is odd & the master paid
+Bad {
+    init: s0;
+
+    // N is odd & the number of "agree"s is odd & a cryptographer paid
+    s0 -> r0 Odd;
+
+    r0 -> r0 NHD;
+    r0 -> r2 NHA;
+    r0 -> r5 PHD;
+    r0 -> r1 PHA;
+    r2 -> r2 NHD;
+    r2 -> r3 NHA;
+    r2 -> r1 PHD;
+    r2 -> r4 PHA;
+    r3 -> r3 NHD;
+    r3 -> r2 NHA;
+    r3 -> r4 PHD;
+    r3 -> r1 PHA;
+    r4 -> r4 NHD;
+    r4 -> r1 NHA;
+    r5 -> r5 NHD;
+    r5 -> r1 NHA;
+    r1 -> r1 NHD;
+    r1 -> r4 NHA;
+
+    r0 -> r0 NTD;
+    r0 -> r2 NTA;
+    r0 -> r5 PTD;
+    r0 -> r1 PTA;
+    r2 -> r2 NTD;
+    r2 -> r3 NTA;
+    r2 -> r1 PTD;
+    r2 -> r4 PTA;
+    r3 -> r3 NTD;
+    r3 -> r2 NTA;
+    r3 -> r4 PTD;
+    r3 -> r1 PTA;
+    r4 -> r4 NTD;
+    r4 -> r1 NTA;
+    r5 -> r5 NTD;
+    r5 -> r1 NTA;
+    r1 -> r1 NTD;
+    r1 -> r4 NTA;
+
+    // N is odd & the number of "agree"s is even & the master paid
+    s0 -> q1 Odd;
+
+    q1 -> q1 NHD;
+    q1 -> q2 NHA;
+    q2 -> q2 NHD;
+    q2 -> q1 NHA;
+
+    q1 -> q1 NTD;
+    q1 -> q2 NTA;
+    q2 -> q2 NTD;
+    q2 -> q1 NTA;
+
+    // N is even & the number of "agree"s is even & a cryptographer paid
+    s0 -> t0 Even;
+
+    t0 -> t0 NHD;
+    t0 -> t1 PHD;
+    t0 -> t2 NHA;
+    t0 -> t3 PHA;
+    t2 -> t0 NHA;
+    t2 -> t1 PHA;
+    t2 -> t2 NHD;
+    t2 -> t3 PHD;
+    t3 -> t1 NHA;
+    t3 -> t3 NHD;
+    t1 -> t1 NHD;
+    t1 -> t3 NHA;
+
+    t0 -> t0 NTD;
+    t0 -> t1 PTD;
+    t0 -> t2 NTA;
+    t0 -> t3 PTA;
+    t2 -> t0 NTA;
+    t2 -> t1 PTA;
+    t2 -> t2 NTD;
+    t2 -> t3 PTD;
+    t3 -> t1 NTA;
+    t3 -> t3 NTD;
+    t1 -> t1 NTD;
+    t1 -> t3 NTA;
+
+    // N is even & the number of "agree"s is odd & the master paid
+    s0 -> m0 Even;
+
+    m0 -> m0 NHD;
+    m0 -> m1 NHA;
+    m1 -> m1 NHD;
+    m1 -> m2 NHA;
+    m2 -> m2 NHD;
+    m2 -> m1 NHA;
+
+    m0 -> m0 NTD;
+    m0 -> m1 NTA;
+    m1 -> m1 NTD;
+    m1 -> m2 NTA;
+    m2 -> m2 NTD;
+    m2 -> m1 NTA;
+
+    accepting: r1, q1, t1, m1;
+}
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 10;
+automatonStateGuessing: 0 .. 4;
