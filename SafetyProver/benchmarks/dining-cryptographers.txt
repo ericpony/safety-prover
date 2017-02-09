@@ -253,5 +253,5 @@ Bad {
 
 monolithicWitness;
 
-transducerStateGuessing: 1 .. 10;
-automatonStateGuessing: 0 .. 4;
+transducerStateGuessing: 5 .. 10;
+automatonStateGuessing: 5 .. 10;
