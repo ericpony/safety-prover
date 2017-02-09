@@ -59,7 +59,7 @@ public class Main {
 
         final int timeout = 60;  // 60 seconds
         final Mode mode = Mode.FIXEDPOINT;
-//        LOGGER.setLevel(Level.OFF);
+        LOGGER.setLevel(Level.OFF);
 
         Timer.setMilliTimeout(timeout * 1000);
         for (File modelFile : modelFiles) {
@@ -125,8 +125,8 @@ public class Main {
         if (invariant == null) {
             System.err.print("\nTimeout in proving safety for " + fileName + "\n");
         } else {
-            invariant = AutomataConverter.toMinimalDFA(invariant);
-            invariant = AutomataConverter.pruneUnreachableStates(invariant);
+            invariant = AutomataConverter.pruneUnreachableStates(AutomataConverter.toDFA(invariant));
+            invariant = AutomataConverter.toMinimalDFA(AutomataConverter.toCompleteDFA(invariant));
             System.err.print("\nSuccessfully found an invariant for " + fileName + "\n");
             LOGGER.debug("VERDICT: Bad configurations are not reachable from any " +
                     (problem.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
@@ -146,15 +146,13 @@ public class Main {
             Automata post = AutomataConverter.minimiseAcyclic(
                     VerificationUltility.getImage(newConfig, T));
 
-            post = AutomataConverter.toMinimalDFA(post);
-            post = AutomataConverter.pruneUnreachableStates(post);
-            LOGGER.debug(post.prettyPrint("Post", indexToLabel));
+            //LOGGER.debug(post.prettyPrint("Post", indexToLabel));
 
             Timer.tick();
 
-//            newConfig = AutomataConverter.minimiseAcyclic(
-//                    VerificationUltility.getDifference(post, reachable));
-            newConfig = post;
+            //newConfig = post;
+            newConfig = AutomataConverter.minimiseAcyclic(
+                    VerificationUltility.getDifference(post, reachable));
 
             Timer.tick();
 

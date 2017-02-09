@@ -190,6 +190,9 @@ public class AutomataConverter {
         return result;
     }
 
+    /**
+     * Turn a complete DFA into a minimal DFA.
+     */
     public static Automata toMinimalDFA(Automata dfa) {
         final State[] states = dfa.getStates();
         final int numStates = states.length;
