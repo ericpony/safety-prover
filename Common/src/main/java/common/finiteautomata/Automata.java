@@ -264,6 +264,15 @@ public class Automata {
         return states.length;
     }
 
+    /* Note: O(n) time cost */
+    public int getNumTransitions() {
+        int num = 0;
+        for (State s : states) {
+            num += s.getNumTransitions();
+        }
+        return num;
+    }
+
     public int getNumLabels() {
         return numLabels;
     }

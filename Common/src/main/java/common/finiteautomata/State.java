@@ -30,6 +30,10 @@ public class State {
         destSet.add(dest);
     }
 
+    public int getNumTransitions() {
+        return outgoingTrans.size();
+    }
+
     public Set<Integer> getDestIds(int label) {
         Set<Integer> dest = outgoingTrans.get(label);
         if (dest != null)
