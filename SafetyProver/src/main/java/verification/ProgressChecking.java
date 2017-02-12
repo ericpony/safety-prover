@@ -69,7 +69,7 @@ public class ProgressChecking {
 
         LOGGER.debug("Bx   size: " + invariant.getStates().length);
         LOGGER.debug("!Fx  size: " + complementF.getStates().length);
-        LOGGER.debug("rhs  size: " + right.V());
+        LOGGER.debug("rhs  size: " + right.getNumVertices());
 
         List<int[]> counterExample =
                 findShortestCounterExample(invariant,
@@ -93,7 +93,7 @@ public class ProgressChecking {
 
         int numStatesB = invariant.getStates().length;
         int numStatesComplementF = complementF.getStates().length;
-        int numStatesPlayer1 = player1.V();
+        int numStatesPlayer1 = player1.getNumVertices();
 
         EdgeWeightedDigraph result =
                 new EdgeWeightedDigraph(numStatesB *
@@ -130,7 +130,7 @@ public class ProgressChecking {
         List<DirectedEdgeWithInputOutput> edgesB = VerificationUltility.getEdges(invariant);
         List<DirectedEdgeWithInputOutput> edgesComplementF = VerificationUltility.getEdges(complementF);
 
-        for (DirectedEdge edge : player1.edges()) {
+        for (DirectedEdge edge : player1.getEdges()) {
             DirectedEdgeWithInputOutput edgePlayer1 = (DirectedEdgeWithInputOutput) edge;
             for (DirectedEdgeWithInputOutput edgeB : edgesB) {
                 if (edgePlayer1.getInput() == edgeB.getInput())
@@ -172,8 +172,8 @@ public class ProgressChecking {
         List<DirectedEdgeWithInputOutput> edgesB = VerificationUltility.getEdges(B);
 
         int numStatesB = B.getStates().length;
-        int numStatesPlayer2 = player2.V();
-        int numStatesTransducer = guessingTransducer.V();
+        int numStatesPlayer2 = player2.getNumVertices();
+        int numStatesTransducer = guessingTransducer.getNumVertices();
 
         EdgeWeightedDigraph result =
                 new EdgeWeightedDigraph(numStatesB * numStatesPlayer2 * numStatesTransducer);
@@ -199,10 +199,10 @@ public class ProgressChecking {
         result.setDestVertices(acceptings);
 
         for (DirectedEdgeWithInputOutput edgeB : edgesB) {
-            for (DirectedEdge edge2 : player2.edges()) {
+            for (DirectedEdge edge2 : player2.getEdges()) {
                 DirectedEdgeWithInputOutput edgePlayer2 = (DirectedEdgeWithInputOutput) edge2;
                 if (edgeB.getInput() == edgePlayer2.getOutput()) {
-                    for (DirectedEdge edge : guessingTransducer.edges()) {
+                    for (DirectedEdge edge : guessingTransducer.getEdges()) {
                         DirectedEdgeWithInputOutput edgeTransducer = (DirectedEdgeWithInputOutput) edge;
                         if (edgeTransducer.getInput() == edgeB.getInput()) {
                             int source = VerificationUltility.hash(edgeB.from(),
@@ -260,7 +260,7 @@ public class ProgressChecking {
 
         // dfa2 might be incomplete, therefore add a
         // special non-accepting looping state
-        final int dfa2NA = dfa2.V();
+        final int dfa2NA = dfa2.getNumVertices();
         final List<DirectedEdge> emptyList = new ArrayList<DirectedEdge>();
 
         // store nodes waiting to visit
@@ -297,13 +297,13 @@ public class ProgressChecking {
             IntTuple currentState = working.poll();
             List<int[]> currentPath = paths.poll();
 
-            Iterable<DirectedEdge> x2yEdges = x2y.adj(currentState.s4);
+            Iterable<DirectedEdge> x2yEdges = x2y.getIncidentEdges(currentState.s4);
             Iterable<DirectedEdge> edges2;
 
             if (currentState.s5 == dfa2NA)
                 edges2 = emptyList;
             else
-                edges2 = dfa2.adj(currentState.s5);
+                edges2 = dfa2.getIncidentEdges(currentState.s5);
 
             for (DirectedEdge _x2yEdge : x2yEdges) {
                 final DirectedEdgeWithInputOutput x2yEdge =

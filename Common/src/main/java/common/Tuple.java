@@ -1,4 +1,4 @@
-package learning;
+package common;
 
 public class Tuple<T> {
     public final T x;

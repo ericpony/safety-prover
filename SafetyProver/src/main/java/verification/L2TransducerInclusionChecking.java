@@ -21,7 +21,7 @@ public class L2TransducerInclusionChecking {
 		Set<Integer> acceptingStates1 = dfa1.getDestVertices();
 		Set<Integer> acceptingStates2 = completeDFA2.getDestVertices();
 
-		int numStatesComposition = dfa1.V();
+		int numStatesComposition = dfa1.getNumVertices();
 
 		// store nodes waiting to visit
 		List<Integer> working1 = new Stack<Integer>();
@@ -36,7 +36,7 @@ public class L2TransducerInclusionChecking {
 		paths.add(new ArrayList<int[]>());
 
 		// check whether a node is visited or not
-		boolean[] isVisited = new boolean[numStatesComposition * completeDFA2.V()];
+		boolean[] isVisited = new boolean[numStatesComposition * completeDFA2.getNumVertices()];
 		int hashInit = VerificationUltility.hash(dfa1.getSourceVertex(),
 				completeDFA2.getSourceVertex(), numStatesComposition);
 		isVisited[hashInit] = true;
@@ -52,8 +52,8 @@ public class L2TransducerInclusionChecking {
 				return currentPath;
 			}
 
-			Iterable<DirectedEdge> edges1 = dfa1.adj(currentState1);
-			Iterable<DirectedEdge> edges2 = completeDFA2.adj(currentState2);
+			Iterable<DirectedEdge> edges1 = dfa1.getIncidentEdges(currentState1);
+			Iterable<DirectedEdge> edges2 = completeDFA2.getIncidentEdges(currentState2);
 
 			for (DirectedEdge edge1 : edges1) {
 				//build from composition, edge is DirectedEdgeWithInputOutputCommon

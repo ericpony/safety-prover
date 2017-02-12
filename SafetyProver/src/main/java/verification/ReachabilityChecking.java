@@ -1,6 +1,6 @@
 package verification;
 
-import common.Utility;
+import common.DOTPrinter;
 import common.VerificationUltility;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
@@ -10,8 +10,8 @@ import common.finiteautomata.AutomataConverter;
 import elimination.CEElimination;
 import elimination.TransitivityPairSet;
 import encoding.*;
-import learning.Timer;
-import learning.Tuple;
+import common.Timer;
+import common.Tuple;
 import main.LOGGER;
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.TimeoutException;
@@ -230,7 +230,7 @@ public class ReachabilityChecking {
 
     public void fixTransducer(EdgeWeightedDigraph relation) {
         assert (!lexicographicOrder);
-        assert (relation.V() == transducerNumStates);
+        assert (relation.getNumVertices() == transducerNumStates);
         assert (relation.getSourceVertex() == 0);
 
         try {
@@ -241,7 +241,7 @@ public class ReachabilityChecking {
                             // check whether this transition exists in the
                             // automaton
                             boolean found = false;
-                            for (DirectedEdge edge : relation.adj(s1 - 1)) {
+                            for (DirectedEdge edge : relation.getIncidentEdges(s1 - 1)) {
                                 DirectedEdgeWithInputOutput ioEdge =
                                         (DirectedEdgeWithInputOutput) edge;
                                 if (ioEdge.to() == s2 - 1 &&
@@ -268,7 +268,7 @@ public class ReachabilityChecking {
 
     public void assertLargerTransducer(EdgeWeightedDigraph relation) {
         assert (!lexicographicOrder);
-        assert (relation.V() == transducerNumStates);
+        assert (relation.getNumVertices() == transducerNumStates);
         assert (relation.getSourceVertex() == 0);
 
         List<Integer> unsetVariables = new ArrayList<Integer>();
@@ -281,7 +281,7 @@ public class ReachabilityChecking {
                             // check whether this transition exists in the
                             // automaton
                             boolean found = false;
-                            for (DirectedEdge edge : relation.adj(s1 - 1)) {
+                            for (DirectedEdge edge : relation.getIncidentEdges(s1 - 1)) {
                                 DirectedEdgeWithInputOutput ioEdge =
                                         (DirectedEdgeWithInputOutput) edge;
                                 if (ioEdge.to() == s2 - 1 &&
@@ -341,9 +341,9 @@ public class ReachabilityChecking {
     private void writeToDot(Automata invariant,
                             EdgeWeightedDigraph transducer) {
         try {
-            Utility.writeOut(Utility.toDot(invariant, labelToIndex),
+            DOTPrinter.writeOut(DOTPrinter.getString(invariant, labelToIndex),
                     OUTPUT_DIR + "/invariant.dot");
-            Utility.writeOut(Utility.toDot(transducer, labelToIndex),
+            DOTPrinter.writeOut(DOTPrinter.getString(transducer, labelToIndex),
                     OUTPUT_DIR + "/transducer.dot");
         } catch (FileNotFoundException e) {
             e.printStackTrace();

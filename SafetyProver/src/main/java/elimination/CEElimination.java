@@ -6,7 +6,7 @@ import encoding.AutomataEncoding;
 import encoding.ISatSolver;
 import encoding.RankingFunction;
 import encoding.TransducerEncoding;
-import learning.Tuple;
+import common.Tuple;
 import org.sat4j.specs.ContradictionException;
 
 import java.util.List;

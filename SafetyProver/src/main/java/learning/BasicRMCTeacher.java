@@ -1,5 +1,6 @@
 package learning;
 
+import common.Tuple;
 import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
@@ -53,10 +54,13 @@ public class BasicRMCTeacher extends RMCTeacher {
         Automata lang = VerificationUltility.getIntersection(hyp, getBadStates());
         ex = AutomataConverter.getSomeShortestWord(lang);
         if (ex != null) {
+//            if (finiteStates.isReachable(ex))
+//                throw new NoInvariantException(ex);
             LOGGER.debug("A bad configuration is contained in hypothesis: " + ex);
             cex.addNegative(ex);
             return false;
         }
+        // reachable?
 
         /*
         // third test: are concrete unreachable configurations excluded?
@@ -72,6 +76,7 @@ public class BasicRMCTeacher extends RMCTeacher {
             }
         }
         */
+
 
         // fourth test: is the invariant inductive?
         InductivenessChecking ic = new InductivenessChecking(hyp, relevantStates, getTransition(), getNumLetters());

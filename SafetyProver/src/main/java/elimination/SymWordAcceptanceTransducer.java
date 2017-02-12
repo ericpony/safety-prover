@@ -26,7 +26,7 @@ public class SymWordAcceptanceTransducer {
         this.transducer = transducer;
         this.wordLen = wordLen;
         this.numLetters = numLetters;
-        this.autNumStates = transducer.V();
+        this.autNumStates = transducer.getNumVertices();
 
         this.startIndex = solver.getNextSATVar();
         solver.setNextSATVar(this.startIndex + (wordLen + 1) * autNumStates + 1);
@@ -55,7 +55,7 @@ public class SymWordAcceptanceTransducer {
         // transitions
         for (int index = 0; index < wordLen; ++index)
             for (int state1 = 0; state1 < autNumStates; ++state1) {
-                Iterable<DirectedEdge> outgoing = transducer.adj(state1);
+                Iterable<DirectedEdge> outgoing = transducer.getIncidentEdges(state1);
                 for (int letter = 0; letter < numLetters; ++letter)
                     for (int state2 = 0; state2 < autNumStates; ++state2) {
                         boolean found = false;

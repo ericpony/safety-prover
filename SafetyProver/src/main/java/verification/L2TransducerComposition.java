@@ -16,11 +16,11 @@ public class L2TransducerComposition {
 	 */
 	public static EdgeWeightedDigraph compose(EdgeWeightedDigraph graph){
 		
-		int numStates = graph.V();
+		int numStates = graph.getNumVertices();
 		EdgeWeightedDigraph result = new EdgeWeightedDigraph(numStates * numStates);
-		for(DirectedEdge edge1: graph.edges()){
+		for(DirectedEdge edge1: graph.getEdges()){
 			DirectedEdgeWithInputOutput tempEdge1 = (DirectedEdgeWithInputOutput) edge1;
-			for(DirectedEdge edge2: graph.edges()){
+			for(DirectedEdge edge2: graph.getEdges()){
 				DirectedEdgeWithInputOutput tempEdge2 = (DirectedEdgeWithInputOutput) edge2;
 				if(tempEdge1.getOutput() == tempEdge2.getInput()){
 					DirectedEdge newEdge = new DirectedEdgeWithInputOutputCommon(VerificationUltility.hash(tempEdge1.from(), tempEdge2.from(), numStates),

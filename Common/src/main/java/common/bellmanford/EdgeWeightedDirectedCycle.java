@@ -49,10 +49,10 @@ public class EdgeWeightedDirectedCycle {
      * @param G the edge-weighted digraph
      */
     public EdgeWeightedDirectedCycle(EdgeWeightedDigraph G) {
-        marked  = new boolean[G.V()];
-        onStack = new boolean[G.V()];
-        edgeTo  = new DirectedEdge[G.V()];
-        for (int v = 0; v < G.V(); v++)
+        marked  = new boolean[G.getNumVertices()];
+        onStack = new boolean[G.getNumVertices()];
+        edgeTo  = new DirectedEdge[G.getNumVertices()];
+        for (int v = 0; v < G.getNumVertices(); v++)
             if (!marked[v]) dfs(G, v);
     }
 
@@ -60,7 +60,7 @@ public class EdgeWeightedDirectedCycle {
     private void dfs(EdgeWeightedDigraph G, int v) {
         onStack[v] = true;
         marked[v] = true;
-        for (DirectedEdge e : G.adj(v)) {
+        for (DirectedEdge e : G.getIncidentEdges(v)) {
             int w = e.to();
 
             // short circuit if directed cycle found

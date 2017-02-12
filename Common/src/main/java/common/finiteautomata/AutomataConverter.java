@@ -462,12 +462,12 @@ public class AutomataConverter {
         final int hashStride = wordLen + 1;
         Automata aut =
                 new Automata(VerificationUltility.hash(0, function.getSourceVertex(), hashStride),
-                        function.V() * (wordLen + 1),
+                        function.getNumVertices() * (wordLen + 1),
                         numLetters);
 
         for (int pos = 0; pos < wordLen; ++pos) {
             int nextChar = word.get(pos);
-            for (DirectedEdge edge : function.edges()) {
+            for (DirectedEdge edge : function.getEdges()) {
                 DirectedEdgeWithInputOutput edgeFunction = (DirectedEdgeWithInputOutput) edge;
                 if (edgeFunction.getInput() == nextChar)
                     aut.addTrans(VerificationUltility.hash(pos, edgeFunction.from(), hashStride),
@@ -496,12 +496,12 @@ public class AutomataConverter {
         final int hashStride = wordLen + 1;
         Automata aut =
                 new Automata(VerificationUltility.hash(0, function.getSourceVertex(), hashStride),
-                        function.V() * (wordLen + 1),
+                        function.getNumVertices() * (wordLen + 1),
                         numLetters);
 
         for (int pos = 0; pos < wordLen; ++pos) {
             int nextChar = word.get(pos);
-            for (DirectedEdge edge : function.edges()) {
+            for (DirectedEdge edge : function.getEdges()) {
                 DirectedEdgeWithInputOutput edgeFunction = (DirectedEdgeWithInputOutput) edge;
                 if (edgeFunction.getOutput() == nextChar)
                     aut.addTrans(VerificationUltility.hash(pos, edgeFunction.from(), hashStride),

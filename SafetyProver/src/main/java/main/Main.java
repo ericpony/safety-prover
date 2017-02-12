@@ -1,6 +1,7 @@
 package main;
 
-import common.Utility;
+import common.TimbukPrinter;
+import common.Timer;
 import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
@@ -18,10 +19,9 @@ import verification.MonolithicVerifier;
 import visitor.AllVisitorImpl;
 import visitor.RegularModel;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.Reader;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 public class Main {
@@ -33,6 +33,11 @@ public class Main {
         SAT_CEGAR
     }
 
+    public enum Task {
+        CONVERT_FOR_ARTMC,
+        CHECK_SAFETY
+    }
+
     private static final ISatSolverFactory SOLVER_FACTORY =
             //MinisatSolver.FACTORY;    // Minisat
             SatSolver.FACTORY;          // Sat4j
@@ -40,96 +45,131 @@ public class Main {
 
     /// directory name of the output
     private final static String OUTPUT_DIR = "output";
+    final static int timeout = 60;  // 60 seconds
+    final static Mode mode = Mode.ANGLUIN;
+    static Task task = Task.CHECK_SAFETY;
 
     public static void main(String[] args) {
+
+        //LOGGER.setLevel(Level.OFF);
+
         if (args.length < 1) {
             System.err.println("No input, doing nothing.");
             return;
         }
-        File in = new File(args[0]);
-        File[] modelFiles;
-        if (in.isFile()) {
-            modelFiles = new File[]{in};
-        } else if (in.isDirectory()) {
-            modelFiles = in.listFiles();
-        } else {
-            System.err.println("Input file is not a valid model.");
-            return;
-        }
 
-        final int timeout = 60;  // 60 seconds
-        final Mode mode = Mode.FIXEDPOINT;
-        LOGGER.setLevel(Level.OFF);
+        ArrayList<File> modelFiles = new ArrayList<>();
+        for (String arg : args) {
+            if (arg.charAt(0) == '-') {
+                switch (arg.substring(1)) {
+                    case "convert":
+                        task = Task.CONVERT_FOR_ARTMC;
+                        break;
+                }
+            } else {
+                File in = new File(arg);
+                if (in.isFile()) {
+                    modelFiles.add(in);
+                } else if (in.isDirectory()) {
+                    modelFiles.addAll(Arrays.asList(in.listFiles()));
+                } else {
+                    System.err.println("Input file is not a valid model.");
+                    return;
+                }
+            }
+        }
+        if (modelFiles.size() == 0) return;
 
         Timer.setMilliTimeout(timeout * 1000);
         for (File modelFile : modelFiles) {
             if (!modelFile.isFile()) continue;
-            char c = modelFile.getName().charAt(0);
+            String modelFileName = modelFile.getName();
+            char c = modelFileName.charAt(0);
             if (c == '_' || c == '.') continue;
-            System.out.println("Checking " + modelFile.getName() + "...");
-            try {
-                long elapsedTime = checkModel(modelFile.getAbsolutePath(), mode);
-                int millisec = (int) (elapsedTime / 1e6);
-                System.out.println("Elapsed time for " + modelFile.getName() + " : " + millisec + " ms.");
-            } catch (Timer.TimeoutException e) {
-                System.out.println("Timeout proving " + modelFile.getName() + " within " + timeout + " seconds.");
-            } catch (SatInvariantNotFoundException e) {
-                System.out.println(e);
+            modelFile = modelFile.getAbsoluteFile();
+            switch (task) {
+                case CHECK_SAFETY:
+                    System.out.println("Checking " + modelFileName + "...");
+                    RegularModel model = parse(modelFile.getPath());
+                    try {
+                        long elapsedTime = checkModel(model, modelFileName, mode);
+                        int millisec = (int) (elapsedTime / 1e6);
+                        System.out.println("Elapsed time for " + modelFileName + " : " + millisec + " ms.");
+                    } catch (Timer.TimeoutException e) {
+                        System.out.println("Timeout proving " + modelFileName + " within " + timeout + " seconds.");
+                    } catch (SatInvariantNotFoundException e) {
+                        System.out.println(e);
+                    }
+                    break;
+                case CONVERT_FOR_ARTMC:
+                    String modelName = modelFileName.split("\\.")[0];
+                    String outputFileName = modelName + ".ml";
+                    System.out.print("\nConverting from " + modelFileName + " to " + outputFileName + "...");
+                    try {
+                        Writer out = new BufferedWriter(new FileWriter(
+                                modelFile.getParent() + File.separatorChar + outputFileName
+                        ), 10000);
+                        model = parse(modelFile.getPath());
+                        TimbukPrinter.print(model, modelName, out);
+                        System.out.println("done.");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
             }
         }
     }
 
-    static long checkModel(String filePath, Mode mode)
+
+    static long checkModel(RegularModel model, String name, Mode mode)
             throws Timer.TimeoutException {
-        RegularModel problem = parse(filePath);
-        String fileName = new File(filePath).getName();
-        if (problem.getLogLevel() <= 0)
+        if (model.getLogLevel() <= 0)
             Configurator.setRootLevel(Level.ERROR);
-        else if (problem.getLogLevel() == 1)
+        else if (model.getLogLevel() == 1)
             Configurator.setRootLevel(Level.INFO);
         else
             Configurator.setRootLevel(Level.ALL);
 
-        writeInputProblem(problem);
+        determize(model);
 
-        determize(problem);
-
-        Map<Integer, String> indexToLabel = problem.getIndexToLabel();
+        Timer.start();
+        Map<Integer, String> indexToLabel = model.getIndexToLabel();
         NoInvariantException.setIndexToLabelMapping(indexToLabel);
         Automata invariant = null;
         //if(problem.getPrecomputedInv()) {
-        Timer.start();
         switch (mode) {
             case HOMEBREW:
                 Learner learner = new LStarLearner();
-                Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
-                        problem.getI(), problem.getB(), problem.getT());
+                Teacher teacher = new BasicRMCTeacher(model.getNumberOfLetters(),
+                        model.getI(), model.getB(), model.getT());
                 invariant = MonolithicLearning.inferWith(learner, teacher);
                 break;
             case ANGLUIN:
                 learner = new LibALFLearner(LibALFFactory.Algorithm.ANGLUIN);
-                teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
-                        problem.getI(), problem.getB(), problem.getT());
+                teacher = new BasicRMCTeacher(model.getNumberOfLetters(),
+                        model.getI(), model.getB(), model.getT());
                 invariant = MonolithicLearning.inferWith(learner, teacher);
                 break;
             case FIXEDPOINT:
-                invariant = findReachabilitySet(problem.getI(), problem.getT(), indexToLabel);
+                invariant = findReachabilitySet(model.getI(), model.getT(), indexToLabel);
                 break;
             case SAT_CEGAR:
                 MonolithicVerifier verifier = new MonolithicVerifier
-                        (problem, SOLVER_FACTORY, problem.getUseRankingFunctions());
+                        (model, SOLVER_FACTORY, model.getUseRankingFunctions());
                 invariant = verifier.verify();
                 break;
         }
         Timer.stop();
         if (invariant == null) {
-            System.err.print("\nTimeout in proving safety for " + fileName + "\n");
+            System.err.print("\nTimeout in proving safety for " + name + "\n");
         } else {
+            System.err.println("\nSuccessfully found an invariant for " + name);
+            System.err.println("#S : " + invariant.getNumStates() + ", #T : " + invariant.getNumTransitions() + "\n");
+
             invariant = AutomataConverter.pruneUnreachableStates(AutomataConverter.toDFA(invariant));
             invariant = AutomataConverter.toMinimalDFA(AutomataConverter.toCompleteDFA(invariant));
-            System.err.print("\nSuccessfully found an invariant for " + fileName + "\n");
             LOGGER.debug("VERDICT: Bad configurations are not reachable from any " +
-                    (problem.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
+                    (model.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
             LOGGER.debug("\n");
             LOGGER.debug("// Configurations visited by the program are contained in");
             LOGGER.debug(invariant.prettyPrint("Invariant", indexToLabel));
@@ -150,7 +190,6 @@ public class Main {
 
             Timer.tick();
 
-            //newConfig = post;
             newConfig = AutomataConverter.minimiseAcyclic(
                     VerificationUltility.getDifference(post, reachable));
 
@@ -196,7 +235,6 @@ public class Main {
             LOGGER.info("Parse Succesful!");
             return problem;
         } catch (Throwable e) {
-
             String error = ("At line " + String.valueOf(l.line_num()) + ", near \"" + l.buff() + "\" :\n") +
                     ("     " + e.getMessage());
             throw new RuntimeException(error);
@@ -228,22 +266,5 @@ public class Main {
             problem.setB(B);
         }
     }
-
-    public static void writeInputProblem(RegularModel problem) {
-        try {
-            Utility.writeOut(Utility.toDot(problem.getI(),
-                    problem.getLabelToIndex()), OUTPUT_DIR + "/automatonI0.dot");
-            Utility.writeOut(Utility.toDot(problem.getB(),
-                    problem.getLabelToIndex()), OUTPUT_DIR + "/automatonF.dot");
-//            Utility.writeOut(Utility.toDot(problem.getPlayer1(),
-//                    problem.getLabelToIndex()), OUTPUT_DIR + "/transducerP1.dot");
-            Utility.writeOut(Utility.toDot(problem.getT(),
-                    problem.getLabelToIndex()), OUTPUT_DIR + "/transducerP2.dot");
-        } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
 }
-
 // vim: tabstop=4

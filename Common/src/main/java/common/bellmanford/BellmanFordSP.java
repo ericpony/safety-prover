@@ -20,10 +20,10 @@ public class BellmanFordSP {
      * @throws IllegalArgumentException unless 0 &le; <tt>s</tt> &le; <tt>V</tt> - 1
      */
     public BellmanFordSP(EdgeWeightedDigraph G, int s) {
-        distTo  = new double[G.V()];
-        edgeTo  = new DirectedEdge[G.V()];
-        onQueue = new boolean[G.V()];
-        for (int v = 0; v < G.V(); v++)
+        distTo  = new double[G.getNumVertices()];
+        edgeTo  = new DirectedEdge[G.getNumVertices()];
+        onQueue = new boolean[G.getNumVertices()];
+        for (int v = 0; v < G.getNumVertices(); v++)
             distTo[v] = Double.POSITIVE_INFINITY;
         distTo[s] = 0.0;
 
@@ -41,7 +41,7 @@ public class BellmanFordSP {
 
     // relax vertex v and put other endpoints on queue if changed
     private void relax(EdgeWeightedDigraph G, int v) {
-        for (DirectedEdge e : G.adj(v)) {
+        for (DirectedEdge e : G.getIncidentEdges(v)) {
             int w = e.to();
             if (distTo[w] > distTo[v] + e.weight()) {
                 distTo[w] = distTo[v] + e.weight();
@@ -51,7 +51,7 @@ public class BellmanFordSP {
                     onQueue[w] = true;
                 }
             }
-            if (cost++ % G.V() == 0)
+            if (cost++ % G.getNumVertices() == 0)
                 findNegativeCycle();
         }
     }

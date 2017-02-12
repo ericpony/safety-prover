@@ -41,7 +41,7 @@ public class BoolValToAutomaton {
 	}
 
     public static EdgeWeightedDigraph buildLexOrder(EdgeWeightedDigraph rf) {
-	int numRFStates = rf.V();
+	int numRFStates = rf.getNumVertices();
 	Set<Integer> rfAccept = rf.getDestVertices();
 	Set<Integer> newAccept = new HashSet<Integer> ();
 
@@ -56,9 +56,9 @@ public class BoolValToAutomaton {
 							      numRFStates, numRFStates),
 				    newAccept);
 
-	for(DirectedEdge edge1: rf.edges()) {
+	for(DirectedEdge edge1: rf.getEdges()) {
 	    DirectedEdgeWithInputOutput tempEdge1 = (DirectedEdgeWithInputOutput) edge1;
-	    for(DirectedEdge edge2: rf.edges()) {
+	    for(DirectedEdge edge2: rf.getEdges()) {
 		DirectedEdgeWithInputOutput tempEdge2 = (DirectedEdgeWithInputOutput) edge2;
 
 		{

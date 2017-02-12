@@ -89,7 +89,7 @@ public class FunctionalConsistencyChecking {
 
 		
 			//add new states to workingState
-			for(DirectedEdge edge: productGraph.adj(currentState)){
+			for(DirectedEdge edge: productGraph.getIncidentEdges(currentState)){
 				if(!isVisited.contains(edge)){
 					workingStates.push(edge);
 					depthStack.push(depthLevel+1);
@@ -112,7 +112,7 @@ public class FunctionalConsistencyChecking {
 	}
 	
 	private EdgeWeightedDigraph productConstruction(EdgeWeightedDigraph singleGraph){
-		int numState = singleGraph.V();
+		int numState = singleGraph.getNumVertices();
 		int init = hash(singleGraph.getSourceVertex(), singleGraph.getSourceVertex(), numState);
 		Set<Integer> newAcceptedStates = new HashSet<Integer>();
 		for(Integer acceptState1: singleGraph.getDestVertices()){
@@ -123,8 +123,8 @@ public class FunctionalConsistencyChecking {
 		
 		EdgeWeightedDigraph graph = new EdgeWeightedDigraph(numState * numState, init, newAcceptedStates);
 		
-		for(DirectedEdge edge1: singleGraph.edges()){
-			for(DirectedEdge edge2: singleGraph.edges()){
+		for(DirectedEdge edge1: singleGraph.getEdges()){
+			for(DirectedEdge edge2: singleGraph.getEdges()){
 				addNewEdge(edge1, edge2, numState, graph);
 			}
 		}

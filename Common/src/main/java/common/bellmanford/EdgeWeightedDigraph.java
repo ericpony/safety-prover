@@ -12,13 +12,13 @@ import java.util.*;
  * It also provides
  * methods for returning the number of vertices <em>V</em> and the number
  * of edges <em>E</em>. Parallel edges and self-loops are permitted.
- * <p/>
+ * <p>
  * This implementation uses an adjacency-lists representation, which
  * is a vertex-indexed array of @link{Bag} objects.
  * All operations take constant time (in the worst case) except
  * iterating over the edges incident from a given vertex, which takes
  * time proportional to the number of such edges.
- * <p/>
+ * <p>
  * For additional documentation,
  * see <a href="http://algs4.cs.princeton.edu/44sp">Section 4.4</a> of
  * <i>Algorithms, 4th Edition</i> by Robert Sedgewick and Kevin Wayne.
@@ -27,8 +27,8 @@ import java.util.*;
  * @author Kevin Wayne
  */
 public class EdgeWeightedDigraph {
-    private final int V;
-    private int E;
+    private final int NUM_VERTICES;
+    private int numEdges;
     private List<DirectedEdge>[] adj;
     private List<DirectedEdge> edges;
     private int source = 0;
@@ -48,20 +48,20 @@ public class EdgeWeightedDigraph {
      *
      * @throws java.lang.IllegalArgumentException if <tt>V</tt> < 0
      */
-    public EdgeWeightedDigraph(int V) {
-        if (V < 0) throw new IllegalArgumentException("Number of vertices in a Digraph must be nonnegative");
-        this.V = V;
-        this.E = 0;
-        adj = new ArrayList[V];
-        for (int v = 0; v < V; v++) {
+    public EdgeWeightedDigraph(int numVertices) {
+        if (numVertices < 0) throw new IllegalArgumentException("Number of vertices in a Digraph must be nonnegative");
+        this.NUM_VERTICES = numVertices;
+        this.numEdges = 0;
+        adj = new ArrayList[numVertices];
+        for (int v = 0; v < numVertices; v++) {
             adj[v] = new ArrayList<DirectedEdge>();
         }
 
         edges = new ArrayList<DirectedEdge>();
     }
 
-    public EdgeWeightedDigraph(int V, int init, Set<Integer> accepting) {
-        this(V);
+    public EdgeWeightedDigraph(int numVertices, int init, Set<Integer> accepting) {
+        this(numVertices);
         this.source = init;
         this.destSet = accepting;
     }
@@ -74,12 +74,12 @@ public class EdgeWeightedDigraph {
      * @throws java.lang.IllegalArgumentException if <tt>V</tt> < 0
      * @throws java.lang.IllegalArgumentException if <tt>E</tt> < 0
      */
-    public EdgeWeightedDigraph(int V, int E) {
-        this(V);
-        if (E < 0) throw new IllegalArgumentException("Number of edges in a Digraph must be nonnegative");
-        for (int i = 0; i < E; i++) {
-            int v = (int) (Math.random() * V);
-            int w = (int) (Math.random() * V);
+    public EdgeWeightedDigraph(int numVertices, int numEdges) {
+        this(numVertices);
+        if (numEdges < 0) throw new IllegalArgumentException("Number of edges in a Digraph must be nonnegative");
+        for (int i = 0; i < numEdges; i++) {
+            int v = (int) (Math.random() * numVertices);
+            int w = (int) (Math.random() * numVertices);
             double weight = Math.round(100 * Math.random()) / 100.0;
             DirectedEdge e = new DirectedEdge(v, w, weight);
             addEdge(e);
@@ -91,8 +91,8 @@ public class EdgeWeightedDigraph {
      *
      * @return the number of vertices in the edge-weighted digraph
      */
-    public int V() {
-        return V;
+    public int getNumVertices() {
+        return NUM_VERTICES;
     }
 
     /**
@@ -100,14 +100,14 @@ public class EdgeWeightedDigraph {
      *
      * @return the number of edges in the edge-weighted digraph
      */
-    public int E() {
-        return E;
+    public int getNumEdges() {
+        return numEdges;
     }
 
     // throw an IndexOutOfBoundsException unless 0 <= v < V
     private void validateVertex(int v) {
-        if (v < 0 || v >= V) {
-            throw new IndexOutOfBoundsException("vertex " + v + " is not between 0 and " + (V - 1));
+        if (v < 0 || v >= NUM_VERTICES) {
+            throw new IndexOutOfBoundsException("vertex " + v + " is not between 0 and " + (NUM_VERTICES - 1));
         }
     }
 
@@ -124,7 +124,7 @@ public class EdgeWeightedDigraph {
         validateVertex(w);
         adj[v].add(e);
         edges.add(e);
-        E++;
+        numEdges++;
     }
 
 
@@ -135,7 +135,7 @@ public class EdgeWeightedDigraph {
      * @return the directed edges incident from vertex <tt>v</tt> as an Iterable
      * @throws java.lang.IndexOutOfBoundsException unless 0 <= v < V
      */
-    public Iterable<DirectedEdge> adj(int v) {
+    public Iterable<DirectedEdge> getIncidentEdges(int v) {
         validateVertex(v);
         return adj[v];
     }
@@ -148,7 +148,7 @@ public class EdgeWeightedDigraph {
      * @return the outdegree of vertex <tt>v</tt>
      * @throws java.lang.IndexOutOfBoundsException unless 0 <= v < V
      */
-    public int outdegree(int v) {
+    public int getOutdegree(int v) {
         validateVertex(v);
         return adj[v].size();
     }
@@ -160,7 +160,7 @@ public class EdgeWeightedDigraph {
      *
      * @return all edges in the edge-weighted graph as an Iterable.
      */
-    public Iterable<DirectedEdge> edges() {
+    public Iterable<DirectedEdge> getEdges() {
         return edges;
     }
 
@@ -174,8 +174,8 @@ public class EdgeWeightedDigraph {
     public String toString() {
         String NEWLINE = System.getProperty("line.separator");
         StringBuilder s = new StringBuilder();
-        s.append(V + " " + E + NEWLINE);
-        for (int v = 0; v < V; v++) {
+        s.append(NUM_VERTICES + " " + numEdges + NEWLINE);
+        for (int v = 0; v < NUM_VERTICES; v++) {
             s.append(v + ": ");
             for (DirectedEdge e : adj[v]) {
                 s.append(e + "  ");
@@ -197,7 +197,7 @@ public class EdgeWeightedDigraph {
         s.append(" {" + NEWLINE);
         s.append("  init: s" + source + ";" + NEWLINE);
 
-        for (int v = 0; v < V; v++)
+        for (int v = 0; v < NUM_VERTICES; v++)
             for (DirectedEdge e : adj[v]) {
                 s.append("  s" + v + " -> s" + e.to());
                 if (e instanceof DirectedEdgeWithInputOutput) {
@@ -245,7 +245,7 @@ public class EdgeWeightedDigraph {
         depthStack.push(0);
 
         //check whether a node is visited or not
-        boolean[] isVisited = new boolean[V];
+        boolean[] isVisited = new boolean[NUM_VERTICES];
         isVisited[root] = true;
         while (!workingStates.isEmpty()) {
             DirectedEdge currentEdge = workingStates.pop();
@@ -298,7 +298,7 @@ public class EdgeWeightedDigraph {
         workingStates.push(root);
 
         //check whether a node is visited or not
-        boolean[] isVisited = new boolean[V];
+        boolean[] isVisited = new boolean[NUM_VERTICES];
         isVisited[root] = true;
         while (!workingStates.isEmpty()) {
             int currentState = workingStates.pop();
@@ -306,7 +306,7 @@ public class EdgeWeightedDigraph {
             allStates.add(currentState);
 
             //add new states to workingState
-            for (DirectedEdge edge : adj(currentState)) {
+            for (DirectedEdge edge : getIncidentEdges(currentState)) {
                 if (!isVisited[edge.to()]) {
                     workingStates.push(edge.to());
 

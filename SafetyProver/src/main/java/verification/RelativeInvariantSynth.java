@@ -7,7 +7,7 @@ import encoding.AutomataEncoding;
 import encoding.BoolValToAutomaton;
 import encoding.ISatSolver;
 import encoding.ISatSolverFactory;
-import learning.Tuple;
+import common.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.sat4j.specs.ContradictionException;

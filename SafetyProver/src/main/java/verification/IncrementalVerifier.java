@@ -1,6 +1,7 @@
 
 package verification;
 
+import common.Timer;
 import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
@@ -484,7 +485,7 @@ public class IncrementalVerifier {
 
                     checking =
                             createReachabilityChecking(false, numStateAutomata,
-                                    relation.V(), oldCEs,
+                                    relation.getNumVertices(), oldCEs,
                                     systemInvariant);
 
                     checking.setup();
@@ -569,7 +570,7 @@ public class IncrementalVerifier {
         chosenTs.add(transducer);
 
         LOGGER.info("found (Bi, Ti) pair: # transducer states: " +
-                transducer.V() +
+                transducer.getNumVertices() +
                 ", # automaton states: " +
                 B.getStates().length);
         LOGGER.info("extending winning set, now have " +

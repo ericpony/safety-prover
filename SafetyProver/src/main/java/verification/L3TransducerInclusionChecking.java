@@ -24,10 +24,10 @@ public class L3TransducerInclusionChecking {
 	
 	// dfa2 might be incomplete, therefore add a
 	// special non-accepting looping state
-	final int dfa2NA = dfa2.V();
+	final int dfa2NA = dfa2.getNumVertices();
 	final List<DirectedEdge> emptyList = new ArrayList<DirectedEdge>();
 
-	int numStatesComposition = dfa1.V();
+	int numStatesComposition = dfa1.getNumVertices();
 
 	// store nodes waiting to visit
 	List<Integer> working1 = new Stack<Integer>();
@@ -63,13 +63,13 @@ public class L3TransducerInclusionChecking {
 		return currentPath;
 	    }
 
-	    Iterable<DirectedEdge> edges1 = dfa1.adj(currentState1);
+	    Iterable<DirectedEdge> edges1 = dfa1.getIncidentEdges(currentState1);
 	    Iterable<DirectedEdge> edges2;
 
 	    if (currentState2 == dfa2NA)
 		edges2 = emptyList;
 	    else
-		edges2 = dfa2.adj(currentState2);
+		edges2 = dfa2.getIncidentEdges(currentState2);
 
 	    for (DirectedEdge edge1 : edges1) {
 		DirectedEdgeWithInputOutput tempEdge1 = (DirectedEdgeWithInputOutput) edge1;

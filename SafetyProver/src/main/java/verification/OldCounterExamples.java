@@ -1,6 +1,6 @@
 package verification;
 
-import learning.Tuple;
+import common.Tuple;
 
 import java.util.ArrayList;
 import java.util.List;
