@@ -9,10 +9,33 @@ import visitor.RegularModel;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.Map;
 
 public class TimbukPrinter {
-    private static String getString(Automata aut, String root, Map<Integer, String> indexToLabel) {
+    final Map<Integer, String> indexToLabel;
+    final RegularModel model;
+    final String rootLabel;
+    final String name;
+
+    public TimbukPrinter(RegularModel model, String name) {
+        this.model = model;
+        this.name = name;
+        Map<Integer, String> map = model.getIndexToLabel();
+        indexToLabel = new HashMap<>(map.size() + 1);
+        // sanitize labels for OCaml
+        for (Integer index : map.keySet()) {
+            String label = map.get(index);
+            if (Character.isDigit(label.charAt(0)))
+                indexToLabel.put(index, getUnusedLabel(label, map));
+            else
+                indexToLabel.put(index, label);
+        }
+        indexToLabel.put(Automata.EPSILON_LABEL, getUnusedLabel("eps", map));
+        rootLabel = getUnusedLabel("_", indexToLabel);
+    }
+
+    private String getString(Automata aut) {
         StringBuilder sb = new StringBuilder();
         State[] states = aut.getStates();
         sb.append("States");
@@ -23,20 +46,21 @@ public class TimbukPrinter {
         for (int sid : aut.getAcceptingStateIds()) {
             sb.append(" s").append(sid);
         }
-        sb.append("\nTransitions " + root + "->s" + aut.getInitStateId());
+        sb.append("\nTransitions " + rootLabel + "->s" + aut.getInitStateId());
         for (State state : states) {
             String s = "(s" + state.getId() + ")";
             for (int i : state.getOutgoingLabels()) {
                 for (int t : state.getDestIds(i)) {
-                    sb.append(" ").append(indexToLabel.get(i))
-                            .append(s).append("->s").append(t);
+                    String label = indexToLabel.get(i);
+                    if (label == null) throw new IllegalStateException("Invalid label index!");
+                    sb.append(" ").append(label).append(s).append("->s").append(t);
                 }
             }
         }
         return sb.toString();
     }
 
-    private static String getString(EdgeWeightedDigraph trans, String root, Map<Integer, String> indexToLabel) {
+    private String getString(EdgeWeightedDigraph trans) {
         StringBuilder sb = new StringBuilder();
         sb.append("([");
         for (int i = 0; i < trans.getNumVertices(); i++) {
@@ -48,7 +72,7 @@ public class TimbukPrinter {
             sb.append("\"s").append(sid).append("\";");
         }
         sb.setCharAt(sb.length() - 1, ']');
-        sb.append(",\n[(\"" + root + "\", [], \"" + root + "\", \"s" + trans.getSourceVertex() + "\")");
+        sb.append(",\n[(\"" + rootLabel + "\", [], \"" + rootLabel + "\", \"s" + trans.getSourceVertex() + "\")");
         for (DirectedEdge e : trans.getEdges()) {
             DirectedEdgeWithInputOutput edge = (DirectedEdgeWithInputOutput) e;
             sb.append("; (\"").append(indexToLabel.get(edge.getInput()))
@@ -60,29 +84,34 @@ public class TimbukPrinter {
         return sb.toString();
     }
 
-    public static void print(RegularModel model, String name, Writer out)
-            throws IOException {
-        Map<Integer, String> indexToLabel = model.getIndexToLabel();
+    private String getUnusedLabel(String label, Map<Integer, String> indexToLabel) {
+        StringBuilder sb = new StringBuilder(label);
+        while (indexToLabel.containsValue(sb.toString())) sb.insert(0, '_');
+        return sb.toString();
+    }
+
+    public void printTo(Writer out) throws IOException {
         StringBuilder sb1 = new StringBuilder(indexToLabel.size() * 15);
         StringBuilder sb2 = new StringBuilder(sb1.capacity());
+        String dummyState = getUnusedLabel("p", indexToLabel);
+        sb2.append("States " + dummyState + "\nFinal States " + dummyState + "\nTransitions");
         for (String label : indexToLabel.values()) {
             sb1.append(label).append(":1 ");
-            sb2.append(label).append("(p)->p ");
+            sb2.append(' ').append(label).append("(").append(dummyState).append(")->").append(dummyState);
         }
+        sb2.append(" " + rootLabel + "->" + dummyState);
         String nameS = name.replaceAll("-", "_").toLowerCase(); // ocaml convertion
-        String rootLabel = "_";
-        while (indexToLabel.containsValue(rootLabel)) rootLabel += "_";
         String sigma_str = "let sigma_str = \"" + sb1.toString() + rootLabel + ":0\" in\n";
-        String init_str = "let init_str = \"" + getString(model.getI(), rootLabel, indexToLabel) + "\" in\n";
-        String bad_str = "let bad_str = \"" + getString(model.getB(), rootLabel, indexToLabel) + "\" in\n";
-        String sigstar_str = "let sigstar_str = \"" + sb2.toString() + rootLabel + "->p\" in\n";
-        String tau_str = "let tau_str = " + getString(model.getT(), rootLabel, indexToLabel) + " in\n";
+        String init_str = "let init_str = \"" + getString(model.getI()) + "\" in\n";
+        String bad_str = "let bad_str = \"" + getString(model.getB()) + "\" in\n";
+        String sigstar_str = "let sigstar_str = \"" + sb2.toString() + "\" in\n";
+        String tau_str = "let tau_str = " + getString(model.getT()) + " in\n";
         String preamble = "open Taml;;\n" + "open Dxn;;\n" + "open Colapsing_v3;;\n" + "let " + nameS + " _ = \n";
         String execution = "print_string \"Checking model " + name + "...\";\n" +
-//                "atrmc_strpres_fwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ bad_str ];\n" +
-//                "atrmc_strpres_fwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ sigstar_str ];\n" +
                 "atrmc_strpres_bwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ bad_str ];\n" +
-//                "atrmc_strpres_bwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ sigstar_str ];\n" +
+                "(* atrmc_strpres_fwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ bad_str ]; *)\n" +
+                "(* atrmc_strpres_fwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ sigstar_str ]; *)\n" +
+                "(* atrmc_strpres_bwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ sigstar_str ]; *)\n" +
                 "();;\n" + nameS + "();;";
         out.write(preamble);
         out.write(sigma_str);
