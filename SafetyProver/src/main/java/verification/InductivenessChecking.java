@@ -1,10 +1,10 @@
 package verification;
 
 
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import common.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,19 +33,19 @@ public class InductivenessChecking {
     }
 
     public Tuple<List<Integer>> check() {
-        final Automata lhs = VerificationUltility.getIntersectionLazily(aut, knownInv);
-        final Automata img = VerificationUltility.getImage(lhs, player);
-        final Automata badImgPoints = VerificationUltility.getDifference(img, aut);
-        final List<Integer> point = AutomataConverter.getSomeShortestWord(badImgPoints);
+        final Automata lhs = AutomataUtility.getIntersectionLazily(aut, knownInv);
+        final Automata img = VerificationUtility.getImage(lhs, player);
+        final Automata badImgPoints = AutomataUtility.getDifference(img, aut);
+        final List<Integer> point = AutomataUtility.findSomeShortestWord(badImgPoints);
 
         if (point == null) {
             return null;
         } else {
             final Automata prePoints =
-                    AutomataConverter.getPreImage(point, player, numLetters);
+                    VerificationUtility.getPreImage(point, player, numLetters);
             final List<Integer> prePoint =
-                    AutomataConverter.getSomeWord(
-                            VerificationUltility.getIntersectionLazily(prePoints, lhs));
+                    AutomataUtility.findSomeWord(
+                            AutomataUtility.getIntersectionLazily(prePoints, lhs));
 
             return new Tuple<List<Integer>>(prePoint, point);
         }

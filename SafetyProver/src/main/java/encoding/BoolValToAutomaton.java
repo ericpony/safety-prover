@@ -3,7 +3,7 @@ package encoding;
 import java.util.HashSet;
 import java.util.Set;
 
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
@@ -20,7 +20,7 @@ public class BoolValToAutomaton {
 		int numLetters = encoding.getNumLetters();
 		
 		Set<Integer> accepting = extractAcceptingStates(modelPosVars, encoding.getStartIndexOfZVars(), numStates);
-		Set<Integer> newAccept = VerificationUltility.convertAccepting(accepting);
+		Set<Integer> newAccept = VerificationUtility.convertAccepting(accepting);
 		EdgeWeightedDigraph graph = new EdgeWeightedDigraph(numStates, 0, newAccept);
 
 		int run = encoding.getStartIndexOfTransVars();
@@ -47,11 +47,11 @@ public class BoolValToAutomaton {
 
 	for (int a : rfAccept)
 	    for (int b : rfAccept)
-		newAccept.add(VerificationUltility.hash(a, b, 1, numRFStates, numRFStates));
+		newAccept.add(VerificationUtility.hash(a, b, 1, numRFStates, numRFStates));
 		
 	EdgeWeightedDigraph result =
 	    new EdgeWeightedDigraph(numRFStates * numRFStates * 3,
-				    VerificationUltility.hash(rf.getSourceVertex(),
+				    VerificationUtility.hash(rf.getSourceVertex(),
 							      rf.getSourceVertex(), 0,
 							      numRFStates, numRFStates),
 				    newAccept);
@@ -70,9 +70,9 @@ public class BoolValToAutomaton {
 			target = 2;
 		    
 		    DirectedEdge newEdge = new DirectedEdgeWithInputOutput
-			(VerificationUltility.hash(tempEdge1.from(), tempEdge2.from(), 0,
+			(VerificationUtility.hash(tempEdge1.from(), tempEdge2.from(), 0,
 						   numRFStates, numRFStates),
-			 VerificationUltility.hash(tempEdge1.to(), tempEdge2.to(), target,
+			 VerificationUtility.hash(tempEdge1.to(), tempEdge2.to(), target,
 						   numRFStates, numRFStates),
 			 tempEdge1.getInput(), tempEdge2.getInput());
 		    result.addEdge(newEdge);
@@ -80,9 +80,9 @@ public class BoolValToAutomaton {
 		
 		for (int s = 1; s <= 2; ++s) {
 		    DirectedEdge newEdge = new DirectedEdgeWithInputOutput
-			(VerificationUltility.hash(tempEdge1.from(), tempEdge2.from(), s,
+			(VerificationUtility.hash(tempEdge1.from(), tempEdge2.from(), s,
 						   numRFStates, numRFStates),
-			 VerificationUltility.hash(tempEdge1.to(), tempEdge2.to(), s,
+			 VerificationUtility.hash(tempEdge1.to(), tempEdge2.to(), s,
 						   numRFStates, numRFStates),
 			 tempEdge1.getInput(), tempEdge2.getInput());
 		    result.addEdge(newEdge);
@@ -135,7 +135,7 @@ public class BoolValToAutomaton {
 		}
 		
 		Set<Integer> accepting = extractAcceptingStates(modelPosVars, encoding.getStartIndexOfZVars(), numStates);
-		Set<Integer> newAccept = VerificationUltility.convertAccepting(accepting);
+		Set<Integer> newAccept = VerificationUtility.convertAccepting(accepting);
 		
 		//state count from 0, label count from 0
 		Automata graph = new Automata(0, numStates, numLetters);

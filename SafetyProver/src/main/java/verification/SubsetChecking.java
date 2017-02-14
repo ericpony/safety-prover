@@ -7,7 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import common.finiteautomata.language.InclusionCheckingImpl;
 
 public class SubsetChecking {
@@ -26,7 +26,7 @@ public class SubsetChecking {
 	
 	public List<Integer> check(){
 		if(!B.isCompleteDFA()){
-			B = AutomataConverter.toCompleteDFA(B);
+			B = AutomataUtility.toCompleteDFA(B);
 		}
 		
 		List<Integer> unacceptingInput = new InclusionCheckingImpl().findShortestCounterExample(I0, B);

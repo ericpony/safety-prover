@@ -1,12 +1,11 @@
 package verification;
 
 import common.DOTPrinter;
-import common.VerificationUltility;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import elimination.CEElimination;
 import elimination.TransitivityPairSet;
 import encoding.*;
@@ -143,7 +142,7 @@ public class ReachabilityChecking {
                 if (closeUnderTransitions) {
                     InductivenessChecking l1 = new InductivenessChecking(
                             invariant,
-                            AutomataConverter.getComplement(B),
+                            AutomataUtility.getComplement(B),
                             T,
                             numLetters);
                     Tuple<List<Integer>> xy = l1.check();
@@ -160,8 +159,8 @@ public class ReachabilityChecking {
 
                 ////////////////////////////////////////////////////////
                 // Check if invariant and bad states are disjoint
-                Automata inter = VerificationUltility.getIntersection(invariant, B);
-                List<Integer> cex = AutomataConverter.getSomeShortestWord(inter);
+                Automata inter = AutomataUtility.getIntersection(invariant, B);
+                List<Integer> cex = AutomataUtility.findSomeShortestWord(inter);
 //                List<Integer> cex = new SubsetChecking(F, AutomataConverter.getComplement(automatonB)).check();
                 if (cex != null) {
                     LOGGER.debug("Invariant contain bad configurations! Counterexample:");

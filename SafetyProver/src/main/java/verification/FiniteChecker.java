@@ -8,12 +8,13 @@ import java.util.Set;
 import java.util.Queue;
 import java.util.ArrayDeque;
 
+import common.VerificationUtility;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 
 public class FiniteChecker {
 
@@ -40,12 +41,12 @@ public class FiniteChecker {
 
 	// Compute initial states for the given word length
 	List<List<Integer>> initialStates =
-	    AutomataConverter.getWords(I0, wordLen);
+	    AutomataUtility.getWords(I0, wordLen);
 
 	System.out.println("Initial: " + initialStates);
 
 	List<List<Integer>> finalStates =
-	    AutomataConverter.getWords(F, wordLen);
+	    AutomataUtility.getWords(F, wordLen);
 
 	System.out.println("" + finalStates.size() + " final words");
 
@@ -69,12 +70,12 @@ public class FiniteChecker {
 	    //	    System.out.println(getRankSym(next));
 
 	    List<List<Integer>> player1Dest =
-		AutomataConverter.getWords
-		(AutomataConverter.getImage(next, player1, numLetters),
+		AutomataUtility.getWords
+		(VerificationUtility.getImage(next, player1, numLetters),
 		 wordLen);
 	    List<List<Integer>> player2Dest =
-		AutomataConverter.getWords
-		(AutomataConverter.getImage(next, player2, numLetters),
+		AutomataUtility.getWords
+		(VerificationUtility.getImage(next, player2, numLetters),
 		 wordLen);
 
 	    if (!player1Dest.isEmpty())

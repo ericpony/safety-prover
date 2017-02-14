@@ -2,10 +2,10 @@
 package verification;
 
 import common.Timer;
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import encoding.ISatSolverFactory;
 import learning.*;
 import org.apache.logging.log4j.LogManager;
@@ -120,7 +120,7 @@ public class IncrementalVerifier {
     ////////////////////////////////////////////////////////////////////////////
 
     public void setup() {
-        player1Configs = VerificationUltility.computeDomain(problem.getPlayer1(),
+        player1Configs = VerificationUtility.computeDomain(problem.getPlayer1(),
                 problem.getNumberOfLetters());
         winningStates = problem.getB();
 
@@ -135,7 +135,7 @@ public class IncrementalVerifier {
                     problem.getI(), problem.getB(), problem.getT());
             systemInvariant = MonolithicLearning.inferWith(learner, teacher);
         } else {
-            systemInvariant = VerificationUltility.getUniversalAutomaton(problem.getNumberOfLetters());
+            systemInvariant = AutomataUtility.getUniversalAutomaton(problem.getNumberOfLetters());
         }
 
         explorationBound = initialFiniteExplorationBound;
@@ -554,17 +554,17 @@ public class IncrementalVerifier {
         if (closeUnderRotation) {
             if (rotationStartLetters == null)
                 BClosure =
-                        AutomataConverter.closeUnderRotation(B);
+                        AutomataUtility.closeUnderRotation(B);
             else
                 BClosure =
-                        AutomataConverter.closeUnderRotation(B, rotationStartLetters);
+                        AutomataUtility.closeUnderRotation(B, rotationStartLetters);
         } else {
             BClosure = B;
         }
 
         winningStates =
-                AutomataConverter.minimise
-                        (VerificationUltility.getUnion(winningStates, BClosure));
+                AutomataUtility.minimise
+                        (AutomataUtility.getUnion(winningStates, BClosure));
 
         chosenBs.add(B);
         chosenTs.add(transducer);
@@ -584,7 +584,7 @@ public class IncrementalVerifier {
         while (true) {
             SubsetChecking checking =
                     new SubsetChecking
-                            (VerificationUltility.getIntersection(systemInvariant,
+                            (AutomataUtility.getIntersection(systemInvariant,
                                     player1Configs),
                                     winningStates);
             List<Integer> cex = checking.check();
@@ -602,9 +602,9 @@ public class IncrementalVerifier {
                 OldCounterExamples oldCEs = new OldCounterExamples();
                 Automata newInv = null;
                 Automata knownInv =
-                        VerificationUltility.getIntersection
+                        AutomataUtility.getIntersection
                                 (systemInvariant,
-                                        AutomataConverter.getComplement(problem.getB()));
+                                        AutomataUtility.getComplement(problem.getB()));
                 for (int num = 1; num < 20 && newInv == null; ++num) {
                     RelativeInvariantSynth invSynth =
                             new RelativeInvariantSynth(SOLVER_FACTORY,
@@ -617,17 +617,17 @@ public class IncrementalVerifier {
                 }
 
                 systemInvariant =
-                        VerificationUltility.getIntersection(systemInvariant, newInv);
+                        AutomataUtility.getIntersection(systemInvariant, newInv);
 
                 assert (systemInvariant.isDFA());
 
                 if (!systemInvariant.isCompleteDFA()) {
                     systemInvariant =
-                            AutomataConverter.toCompleteDFA(systemInvariant);
+                            AutomataUtility.toCompleteDFA(systemInvariant);
                 }
 
                 systemInvariant =
-                        AutomataConverter.toMinimalDFA(systemInvariant);
+                        AutomataUtility.toMinimalDFA(systemInvariant);
 
                 LOGGER.debug("new system invariant is " + systemInvariant);
             }

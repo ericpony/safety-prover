@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
@@ -37,7 +37,7 @@ public class L2TransducerInclusionChecking {
 
 		// check whether a node is visited or not
 		boolean[] isVisited = new boolean[numStatesComposition * completeDFA2.getNumVertices()];
-		int hashInit = VerificationUltility.hash(dfa1.getSourceVertex(),
+		int hashInit = VerificationUtility.hash(dfa1.getSourceVertex(),
 				completeDFA2.getSourceVertex(), numStatesComposition);
 		isVisited[hashInit] = true;
 		while (!working2.isEmpty()) {
@@ -68,7 +68,7 @@ public class L2TransducerInclusionChecking {
 					if (input1 == tempEdge2.getInput()
 							&& output1 == tempEdge2.getOutput()) {
 						int dest2 = tempEdge2.to();
-						int hashValue = VerificationUltility.hash(dest1, dest2, numStatesComposition);
+						int hashValue = VerificationUtility.hash(dest1, dest2, numStatesComposition);
 						if (!isVisited[hashValue]) {
 							isVisited[hashValue] = true;
 

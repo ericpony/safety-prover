@@ -1,8 +1,9 @@
 package elimination;
 
+import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import common.finiteautomata.State;
 import encoding.AutomataEncoding;
 import encoding.ISatSolver;
@@ -89,7 +90,7 @@ public class CE4Elimination {
             // is the z language small?
 
             List<List<Integer>> zWords =
-                    AutomataConverter.getWords(zLanguage, wordLen, 4);
+                    AutomataUtility.getWords(zLanguage, wordLen, 4);
             if (zWords.size() > 3) {
 //		LOGGER.debug("big language");
                 encodeFull(Bx);
@@ -450,7 +451,7 @@ public class CE4Elimination {
     ////////////////////////////////////////////////////////////////////////////
 
     private Automata computeZLanguage() {
-        return AutomataConverter.getImage(ceY, player2, numLetters);
+        return VerificationUtility.getImage(ceY, player2, numLetters);
     }
 
     private int zStartIndex;

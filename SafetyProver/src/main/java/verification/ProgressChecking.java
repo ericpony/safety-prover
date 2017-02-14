@@ -1,11 +1,11 @@
 package verification;
 
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,19 +46,19 @@ public class ProgressChecking {
      */
     public List<List<Integer>> check() {
         //		EdgeWeightedDigraph left = composeLeftPart();
-        Automata complementF = AutomataConverter.getComplement(F);
-        Automata winningStatesF = AutomataConverter.getComplement(winningStates);
-        Automata invariant = VerificationUltility.getIntersection(B, systemInvariant);
+        Automata complementF = AutomataUtility.getComplement(F);
+        Automata winningStatesF = AutomataUtility.getComplement(winningStates);
+        Automata invariant = AutomataUtility.getIntersection(B, systemInvariant);
         EdgeWeightedDigraph right = composeRightPart();
 
 	/*		if(!VerificationUltility.isDFA(left, numLetters)){
             left = VerificationUltility.toDFA(left, numLetters);
                         } */
 
-        right = VerificationUltility.simplifyNFA(right);
+        right = VerificationUtility.simplifyNFA(right);
 
-        if (!VerificationUltility.isDFA(right, numLetters)) {
-            right = VerificationUltility.toDFA2(right, numLetters);
+        if (!VerificationUtility.isDFA(right, numLetters)) {
+            right = VerificationUtility.toDFA2(right, numLetters);
         }
 
         //		if(!VerificationUltility.isComplete(right, numLetters)){
@@ -80,16 +80,16 @@ public class ProgressChecking {
                         player1,
                         right);
         List<List<Integer>> result =
-                VerificationUltility.convertToWords(counterExample, 2);
+                VerificationUtility.convertToWords(counterExample, 2);
 
         return result;
     }
 
     private EdgeWeightedDigraph composeLeftPart() {
         // B(x) & !F(x) & !F(y) & (x ->1 y)
-        Automata complementF = AutomataConverter.getComplement(F);
+        Automata complementF = AutomataUtility.getComplement(F);
         Automata invariant =
-                VerificationUltility.getIntersection(B, systemInvariant);
+                AutomataUtility.getIntersection(B, systemInvariant);
 
         int numStatesB = invariant.getStates().length;
         int numStatesComplementF = complementF.getStates().length;
@@ -99,7 +99,7 @@ public class ProgressChecking {
                 new EdgeWeightedDigraph(numStatesB *
                         numStatesComplementF * numStatesComplementF *
                         numStatesPlayer1);
-        result.setSourceVertex(VerificationUltility.hash(invariant.getInitStateId(),
+        result.setSourceVertex(VerificationUtility.hash(invariant.getInitStateId(),
                 complementF.getInitStateId(),
                 complementF.getInitStateId(),
                 player1.getSourceVertex(),
@@ -113,7 +113,7 @@ public class ProgressChecking {
             for (int acceptComplementFx : complementF.getAcceptingStateIds()) {
                 for (int acceptComplementFy : complementF.getAcceptingStateIds()) {
                     for (int acceptPlayer1 : player1.getDestVertices()) {
-                        acceptings.add(VerificationUltility.hash(acceptB,
+                        acceptings.add(VerificationUtility.hash(acceptB,
                                 acceptComplementFx,
                                 acceptComplementFy,
                                 acceptPlayer1,
@@ -127,8 +127,8 @@ public class ProgressChecking {
         result.setDestVertices(acceptings);
 
 
-        List<DirectedEdgeWithInputOutput> edgesB = VerificationUltility.getEdges(invariant);
-        List<DirectedEdgeWithInputOutput> edgesComplementF = VerificationUltility.getEdges(complementF);
+        List<DirectedEdgeWithInputOutput> edgesB = AutomataUtility.getEdges(invariant);
+        List<DirectedEdgeWithInputOutput> edgesComplementF = AutomataUtility.getEdges(complementF);
 
         for (DirectedEdge edge : player1.getEdges()) {
             DirectedEdgeWithInputOutput edgePlayer1 = (DirectedEdgeWithInputOutput) edge;
@@ -138,14 +138,14 @@ public class ProgressChecking {
                         if (edgePlayer1.getInput() == edgeComplementFx.getInput())
                             for (DirectedEdgeWithInputOutput edgeComplementFy : edgesComplementF) {
                                 if (edgePlayer1.getOutput() == edgeComplementFy.getInput()) {
-                                    int source = VerificationUltility.hash(edgeB.from(),
+                                    int source = VerificationUtility.hash(edgeB.from(),
                                             edgeComplementFx.from(),
                                             edgeComplementFy.from(),
                                             edgePlayer1.from(),
                                             numStatesB,
                                             numStatesComplementF,
                                             numStatesComplementF);
-                                    int dest = VerificationUltility.hash(edgeB.to(),
+                                    int dest = VerificationUtility.hash(edgeB.to(),
                                             edgeComplementFx.to(),
                                             edgeComplementFy.to(),
                                             edgePlayer1.to(),
@@ -169,7 +169,7 @@ public class ProgressChecking {
 
     private EdgeWeightedDigraph composeRightPart() {
         // exists z. (B(z) & (y ->2 z) & x > z)
-        List<DirectedEdgeWithInputOutput> edgesB = VerificationUltility.getEdges(B);
+        List<DirectedEdgeWithInputOutput> edgesB = AutomataUtility.getEdges(B);
 
         int numStatesB = B.getStates().length;
         int numStatesPlayer2 = player2.getNumVertices();
@@ -177,7 +177,7 @@ public class ProgressChecking {
 
         EdgeWeightedDigraph result =
                 new EdgeWeightedDigraph(numStatesB * numStatesPlayer2 * numStatesTransducer);
-        result.setSourceVertex(VerificationUltility.hash(B.getInitStateId(),
+        result.setSourceVertex(VerificationUtility.hash(B.getInitStateId(),
                 player2.getSourceVertex(),
                 guessingTransducer.getSourceVertex(),
                 numStatesB,
@@ -188,7 +188,7 @@ public class ProgressChecking {
         for (int acceptB : B.getAcceptingStateIds()) {
             for (int acceptPlayer2 : player2.getDestVertices()) {
                 for (int acceptTransducer : guessingTransducer.getDestVertices()) {
-                    acceptings.add(VerificationUltility.hash(acceptB,
+                    acceptings.add(VerificationUtility.hash(acceptB,
                             acceptPlayer2,
                             acceptTransducer,
                             numStatesB,
@@ -205,12 +205,12 @@ public class ProgressChecking {
                     for (DirectedEdge edge : guessingTransducer.getEdges()) {
                         DirectedEdgeWithInputOutput edgeTransducer = (DirectedEdgeWithInputOutput) edge;
                         if (edgeTransducer.getInput() == edgeB.getInput()) {
-                            int source = VerificationUltility.hash(edgeB.from(),
+                            int source = VerificationUtility.hash(edgeB.from(),
                                     edgePlayer2.from(),
                                     edgeTransducer.from(),
                                     numStatesB,
                                     numStatesPlayer2);
-                            int dest = VerificationUltility.hash(edgeB.to(),
+                            int dest = VerificationUtility.hash(edgeB.to(),
                                     edgePlayer2.to(),
                                     edgeTransducer.to(),
                                     numStatesB,

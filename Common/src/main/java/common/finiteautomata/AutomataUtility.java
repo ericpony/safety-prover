@@ -1,9 +1,8 @@
 package common.finiteautomata;
 
-import common.VerificationUltility;
-import common.bellmanford.DirectedEdge;
+import common.IntPair;
+import common.VerificationUtility;
 import common.bellmanford.DirectedEdgeWithInputOutput;
-import common.bellmanford.EdgeWeightedDigraph;
 import de.libalf.BasicAutomaton;
 import de.libalf.BasicTransition;
 import org.apache.logging.log4j.LogManager;
@@ -12,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.*;
 
 
-public class AutomataConverter {
+public class AutomataUtility {
     private static final Logger LOGGER = LogManager.getLogger();
 
     public static Automata toDFA(Automata automata) {
@@ -454,74 +453,6 @@ public class AutomataConverter {
         return mergeStates(pruneUnreachableStates(automata));
     }
 
-    public static Automata getImage(List<Integer> word,
-                                    EdgeWeightedDigraph function,
-                                    int numLetters) {
-        int wordLen = word.size();
-
-        final int hashStride = wordLen + 1;
-        Automata aut =
-                new Automata(VerificationUltility.hash(0, function.getSourceVertex(), hashStride),
-                        function.getNumVertices() * (wordLen + 1),
-                        numLetters);
-
-        for (int pos = 0; pos < wordLen; ++pos) {
-            int nextChar = word.get(pos);
-            for (DirectedEdge edge : function.getEdges()) {
-                DirectedEdgeWithInputOutput edgeFunction = (DirectedEdgeWithInputOutput) edge;
-                if (edgeFunction.getInput() == nextChar)
-                    aut.addTrans(VerificationUltility.hash(pos, edgeFunction.from(), hashStride),
-                            edgeFunction.getOutput(),
-                            VerificationUltility.hash(pos + 1, edgeFunction.to(), hashStride));
-            }
-        }
-
-        Set<Integer> acceptings = new HashSet<Integer>();
-        for (int a : function.getDestVertices())
-            acceptings.add(VerificationUltility.hash(wordLen, a, hashStride));
-        aut.setAcceptingStateIds(acceptings);
-
-        Automata prunedAut = AutomataConverter.pruneUnreachableStates(aut);
-        Automata completeAut = AutomataConverter.toCompleteDFA(prunedAut);
-        Automata minimalAut = AutomataConverter.toMinimalDFA(completeAut);
-
-        return minimalAut;
-    }
-
-    public static Automata getPreImage(List<Integer> word,
-                                       EdgeWeightedDigraph function,
-                                       int numLetters) {
-        int wordLen = word.size();
-
-        final int hashStride = wordLen + 1;
-        Automata aut =
-                new Automata(VerificationUltility.hash(0, function.getSourceVertex(), hashStride),
-                        function.getNumVertices() * (wordLen + 1),
-                        numLetters);
-
-        for (int pos = 0; pos < wordLen; ++pos) {
-            int nextChar = word.get(pos);
-            for (DirectedEdge edge : function.getEdges()) {
-                DirectedEdgeWithInputOutput edgeFunction = (DirectedEdgeWithInputOutput) edge;
-                if (edgeFunction.getOutput() == nextChar)
-                    aut.addTrans(VerificationUltility.hash(pos, edgeFunction.from(), hashStride),
-                            edgeFunction.getInput(),
-                            VerificationUltility.hash(pos + 1, edgeFunction.to(), hashStride));
-            }
-        }
-
-        Set<Integer> acceptings = new HashSet<Integer>();
-        for (int a : function.getDestVertices())
-            acceptings.add(VerificationUltility.hash(wordLen, a, hashStride));
-        aut.setAcceptingStateIds(acceptings);
-
-        Automata prunedAut = AutomataConverter.pruneUnreachableStates(aut);
-        Automata completeAut = AutomataConverter.toCompleteDFA(prunedAut);
-        Automata minimalAut = AutomataConverter.toMinimalDFA(completeAut);
-
-        return minimalAut;
-    }
-
     /**
      * Compute all words of length <code>wordLength</code> accepted by the
      * given automaton.
@@ -548,6 +479,200 @@ public class AutomataConverter {
         } catch (TooManyWordsException e) {
         }
         return res;
+    }
+
+    public static Automata getUnion(Automata B, Automata F) {
+        int numStatesB = B.getStates().length;
+        int numStatesF = F.getStates().length;
+
+        int numStatesBF = 1 + numStatesB + numStatesF;
+        Automata result = new Automata(0, numStatesBF, B.getNumLabels());
+
+        int offsetStateB = 1;
+        int offsetStateF = offsetStateB + numStatesB;
+
+        Set<Integer> acceptings = new HashSet<Integer>();
+        for (int acceptB : B.getAcceptingStateIds()) {
+            acceptings.add(acceptB + offsetStateB);
+        }
+
+        for (int acceptF : F.getAcceptingStateIds()) {
+            acceptings.add(acceptF + offsetStateF);
+        }
+
+        if (B.getAcceptingStateIds().contains(B.getInitStateId()) ||
+                F.getAcceptingStateIds().contains(F.getInitStateId()))
+            acceptings.add(0);
+
+        result.setAcceptingStateIds(acceptings);
+
+        //add empty transition from new init to 2 inits of B, F
+        //		result.addTrans(0, Automata.EPSILON_LABEL, B.getSourceVertex() + offsetStateB);
+        //		result.addTrans(0, Automata.EPSILON_LABEL, F.getSourceVertex() + offsetStateF);
+
+        List<DirectedEdgeWithInputOutput> edgesB = getEdges(B);
+        for (DirectedEdgeWithInputOutput edgeB : edgesB) {
+            result.addTrans(edgeB.from() + offsetStateB, edgeB.getInput(), edgeB.to() + offsetStateB);
+            if (edgeB.from() == B.getInitStateId())
+                result.addTrans(0, edgeB.getInput(), edgeB.to() + offsetStateB);
+        }
+
+        List<DirectedEdgeWithInputOutput> edgesF = getEdges(F);
+        for (DirectedEdgeWithInputOutput edgeF : edgesF) {
+            result.addTrans(edgeF.from() + offsetStateF, edgeF.getInput(), edgeF.to() + offsetStateF);
+            if (edgeF.from() == F.getInitStateId())
+                result.addTrans(0, edgeF.getInput(), edgeF.to() + offsetStateF);
+        }
+
+        return result;
+
+    }
+
+    public static Automata getUniversalAutomaton(int numLetters) {
+        Automata result = new Automata(0, 1, numLetters);
+
+        Set<Integer> acceptings = new HashSet<Integer>();
+        acceptings.add(0);
+        result.setAcceptingStateIds(acceptings);
+
+        for (int i = 0; i < numLetters; ++i)
+            result.addTrans(0, i, 0);
+
+        return result;
+    }
+
+    public static Automata getIntersection(Automata B, Automata F) {
+        int numStatesB = B.getStates().length;
+        int numStatesF = F.getStates().length;
+
+        int numStatesBF = numStatesB * numStatesF;
+        Automata result = new Automata(VerificationUtility.hash(B.getInitStateId(), F.getInitStateId(), numStatesB),
+                numStatesBF, B.getNumLabels());
+
+        Set<Integer> acceptings = new HashSet<Integer>();
+        for (int acceptB : B.getAcceptingStateIds())
+            for (int acceptF : F.getAcceptingStateIds())
+                acceptings.add(VerificationUtility.hash(acceptB, acceptF, numStatesB));
+
+        result.setAcceptingStateIds(acceptings);
+
+        List<DirectedEdgeWithInputOutput> edgesB = getEdges(B);
+        List<DirectedEdgeWithInputOutput> edgesF = getEdges(F);
+
+        for (DirectedEdgeWithInputOutput edgeB : edgesB)
+            for (DirectedEdgeWithInputOutput edgeF : edgesF)
+                if (edgeB.getInput() == edgeF.getInput())
+                    result.addTrans(VerificationUtility.hash(edgeB.from(), edgeF.from(), numStatesB),
+                            edgeB.getInput(),
+                            VerificationUtility.hash(edgeB.to(), edgeF.to(), numStatesB));
+
+        return pruneUnreachableStates(result);
+    }
+
+    public static Automata getDifference(Automata A, Automata B) {
+        return getIntersectionLazily(A, B, true);
+    }
+
+    public static Automata getIntersectionLazily(Automata A, Automata B) {
+        return getIntersectionLazily(A, B, false);
+    }
+
+    private static Automata getIntersectionLazily(Automata A, Automata B, boolean complementB) {
+        //	    System.out.println("A: " + A);
+        //	    System.out.println("B: " + B);
+        final int numLetters = A.getNumLabels();
+        final State[] statesA = A.getStates();
+        final State[] statesB = B.getStates();
+        final int numStatesB = statesB.length;
+        final Set<Integer> acceptingA = A.getAcceptingStateIds();
+        final Set<Integer> acceptingB = B.getAcceptingStateIds();
+
+        if (complementB && !B.isDFA()) throw new IllegalStateException("The second automaton mush be a DFA.");
+
+        final List<IntPair> newStates = new ArrayList<IntPair>();
+        final Map<IntPair, Integer> stateId = new HashMap<IntPair, Integer>();
+
+        newStates.add(new IntPair(A.getInitStateId(), B.getInitStateId()));
+        stateId.put(newStates.get(0), 0);
+
+        final List<Integer> transFrom = new ArrayList<Integer>();
+        final List<Integer> transLabel = new ArrayList<Integer>();
+        final List<Integer> transTo = new ArrayList<Integer>();
+
+        final Set<Integer> dummyBStates = new HashSet<Integer>();
+        dummyBStates.add(numStatesB);
+
+        for (int nextToProcess = 0;
+             nextToProcess < newStates.size();
+             ++nextToProcess) {
+            final IntPair state = newStates.get(nextToProcess);
+            final State stateA = statesA[state.a];
+
+            for (int l : stateA.getOutgoingLabels()) {
+                Set<Integer> destsB;
+                if (complementB) {
+                    if (state.b == numStatesB) {
+                        destsB = dummyBStates;
+                    } else {
+                        destsB = statesB[state.b].getDestIds(l);
+                        if (destsB.isEmpty())
+                            destsB = dummyBStates;
+                    }
+                } else {
+                    destsB = statesB[state.b].getDestIds(l);
+                }
+
+                for (int destA : stateA.getDestIds(l))
+                    for (int destB : destsB) {
+                        final IntPair dest = new IntPair(destA, destB);
+
+                        Integer destId = stateId.get(dest);
+                        if (destId == null) {
+                            destId = newStates.size();
+                            stateId.put(dest, destId);
+                            newStates.add(dest);
+                        }
+
+                        transFrom.add(nextToProcess);
+                        transLabel.add(l);
+                        transTo.add(destId);
+                    }
+            }
+        }
+
+        final Automata result = new Automata(0, newStates.size(), numLetters);
+
+        for (int i = 0; i < transFrom.size(); ++i)
+            result.addTrans(transFrom.get(i), transLabel.get(i), transTo.get(i));
+
+        Set<Integer> acceptings = new HashSet<Integer>();
+        for (int i = 0; i < newStates.size(); ++i) {
+            final IntPair state = newStates.get(i);
+            if (acceptingA.contains(state.a) &&
+                    (complementB != acceptingB.contains(state.b)))
+                acceptings.add(i);
+        }
+
+        result.setAcceptingStateIds(acceptings);
+
+        return result;
+    }
+
+    public static List<DirectedEdgeWithInputOutput> getEdges(Automata automata) {
+        List<DirectedEdgeWithInputOutput> result = new ArrayList<DirectedEdgeWithInputOutput>();
+
+        int dummyOutput = -1;
+        for (State state : automata.getStates()) {
+            for (int label = 0; label < automata.getNumLabels(); label++) {
+                Set<Integer> dests = state.getDestIds(label);
+                for (int dest : dests) {
+                    DirectedEdgeWithInputOutput edge = new DirectedEdgeWithInputOutput(state.getId(), dest, label, dummyOutput);
+                    result.add(edge);
+                }
+            }
+        }
+
+        return result;
     }
 
     private static class TooManyWordsException extends RuntimeException {
@@ -586,10 +711,9 @@ public class AutomataConverter {
      * Compute a word accepted by the given automaton; or
      * <code>null</code> if the accepted language is empty
      */
-    public static List<Integer> getSomeWord(Automata lang) {
+    public static List<Integer> findSomeWord(Automata lang) {
         final List<Integer> res = new ArrayList<Integer>();
-
-        if (findWord(lang.getStates()[lang.getInitStateId()],
+        if (findSomeWordHelpter(lang.getStates()[lang.getInitStateId()],
                 lang,
                 res,
                 new boolean[lang.getStates().length]))
@@ -597,19 +721,18 @@ public class AutomataConverter {
         return null;
     }
 
-    private static boolean findWord(State state,
-                                    Automata lang,
-                                    List<Integer> currentWord,
-                                    boolean[] seenStates) {
+    private static boolean findSomeWordHelpter(State state,
+                                               Automata lang,
+                                               List<Integer> currentWord,
+                                               boolean[] seenStates) {
         if (lang.getAcceptingStateIds().contains(state.getId()))
             return true;
-
         for (int l : state.getOutgoingLabels()) {
             currentWord.add(l);
             for (int id : state.getDestIds(l)) {
                 if (!seenStates[id]) {
                     seenStates[id] = true;
-                    if (findWord(lang.getStates()[id],
+                    if (findSomeWordHelpter(lang.getStates()[id],
                             lang,
                             currentWord,
                             seenStates))
@@ -626,7 +749,7 @@ public class AutomataConverter {
      * Compute a word accepted by the given automaton; or
      * <code>null</code> if the accepted language is empty
      */
-    public static List<Integer> getSomeShortestWord(Automata lang) {
+    public static List<Integer> findSomeShortestWord(Automata lang) {
         final State[] states = lang.getStates();
         final int N = states.length;
         final List<Integer>[] words = new List[N];
@@ -677,7 +800,7 @@ public class AutomataConverter {
             for (int s = 0; s < wordLength; ++s)
                 lengthAut.addTrans(s, l, s + 1);
 
-        return minimise(VerificationUltility.getIntersection(lengthAut, aut));
+        return minimise(getIntersection(lengthAut, aut));
     }
 
     public static Automata closeUnderRotation(Automata aut) {
@@ -731,9 +854,9 @@ public class AutomataConverter {
         prefixAut.setAcceptingStateIds(acceptings);
 
         final Automata restrictedClosure =
-                VerificationUltility.getIntersectionLazily(closure, prefixAut);
+                getIntersectionLazily(closure, prefixAut);
         final Automata result =
-                minimise(VerificationUltility.getUnion(restrictedClosure, aut));
+                minimise(getUnion(restrictedClosure, aut));
         return result;
     }
 

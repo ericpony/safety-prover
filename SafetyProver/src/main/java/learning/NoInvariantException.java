@@ -1,6 +1,6 @@
 package learning;
 
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 
@@ -17,7 +17,7 @@ public class NoInvariantException extends RuntimeException {
     }
 
     static List<Object> getTrace(List<Integer> target, Automata I, EdgeWeightedDigraph T) {
-        List<List<Integer>> trace = VerificationUltility.findSomeTrace(target, I, T);
+        List<List<Integer>> trace = VerificationUtility.findSomeTrace(target, I, T);
         return trace == null ? null : Arrays.asList(trace.stream()
                 .map(word -> getLabeledWord(word).toString()).toArray());
     }

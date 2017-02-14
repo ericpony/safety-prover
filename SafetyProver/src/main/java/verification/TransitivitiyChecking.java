@@ -5,7 +5,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 
 public class TransitivitiyChecking {
@@ -30,16 +30,16 @@ public class TransitivitiyChecking {
 //			composition = VerificationUltility.toDFA(composition, numLetters);
 //		}
 		
-		if(!VerificationUltility.isDFA(transducer, numLetters)){
-			transducer = VerificationUltility.toDFA(transducer, numLetters);
+		if(!VerificationUtility.isDFA(transducer, numLetters)){
+			transducer = VerificationUtility.toDFA(transducer, numLetters);
 		}
 		
-		if(!VerificationUltility.isComplete(transducer, numLetters)){
-			transducer = VerificationUltility.makeComplete(transducer, numLetters);
+		if(!VerificationUtility.isComplete(transducer, numLetters)){
+			transducer = VerificationUtility.makeComplete(transducer, numLetters);
 		}
 		
 		List<int[]> counterExample = L2TransducerInclusionChecking.findShortestCounterExample(composition, transducer);
-		return VerificationUltility.convertToWords(counterExample, 3);
+		return VerificationUtility.convertToWords(counterExample, 3);
 	}
 
 

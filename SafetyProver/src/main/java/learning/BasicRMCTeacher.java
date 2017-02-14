@@ -1,10 +1,9 @@
 package learning;
 
 import common.Tuple;
-import common.VerificationUltility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import main.LOGGER;
 import verification.FiniteStateSets;
 import verification.InductivenessChecking;
@@ -20,7 +19,7 @@ public class BasicRMCTeacher extends RMCTeacher {
 
     public BasicRMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T) {
         super(numLetters, I, B, T);
-        relevantStates = AutomataConverter.getComplement(B);
+        relevantStates = AutomataUtility.getComplement(B);
         finiteStates = new FiniteStateSets(I, T, B);
     }
 
@@ -51,8 +50,8 @@ public class BasicRMCTeacher extends RMCTeacher {
         }
 
         // second test: are bad configurations excluded?
-        Automata lang = VerificationUltility.getIntersection(hyp, getBadStates());
-        ex = AutomataConverter.getSomeShortestWord(lang);
+        Automata lang = AutomataUtility.getIntersection(hyp, getBadStates());
+        ex = AutomataUtility.findSomeShortestWord(lang);
         if (ex != null) {
 //            if (finiteStates.isReachable(ex))
 //                throw new NoInvariantException(ex);

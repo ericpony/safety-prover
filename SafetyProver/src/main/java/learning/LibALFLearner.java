@@ -1,7 +1,7 @@
 package learning;
 
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import de.libalf.BasicAutomaton;
 import de.libalf.Knowledgebase;
 import de.libalf.LearningAlgorithm;
@@ -80,7 +80,7 @@ public class LibALFLearner extends Learner {
                 }
             } else {
                 CounterExample cex = new CounterExample();
-                if (teacher.isCorrectLanguage(AutomataConverter.Alf2SLRP(conjecture), cex)) {
+                if (teacher.isCorrectLanguage(AutomataUtility.Alf2SLRP(conjecture), cex)) {
                     automaton = conjecture;
                 } else {
                     List<Integer> ex = cex.get();
@@ -91,7 +91,7 @@ public class LibALFLearner extends Learner {
         } while (automaton == null);
         // Present result
         //System.out.println("\nResult:\n\n" + automaton.toDot());
-        return AutomataConverter.Alf2SLRP(automaton);
+        return AutomataUtility.Alf2SLRP(automaton);
     }
 
     private Integer[] ints2Integers(int[] ints) {

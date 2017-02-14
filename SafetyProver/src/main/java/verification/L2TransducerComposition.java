@@ -3,7 +3,7 @@ package verification;
 import java.util.HashSet;
 import java.util.Set;
 
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
@@ -23,8 +23,8 @@ public class L2TransducerComposition {
 			for(DirectedEdge edge2: graph.getEdges()){
 				DirectedEdgeWithInputOutput tempEdge2 = (DirectedEdgeWithInputOutput) edge2;
 				if(tempEdge1.getOutput() == tempEdge2.getInput()){
-					DirectedEdge newEdge = new DirectedEdgeWithInputOutputCommon(VerificationUltility.hash(tempEdge1.from(), tempEdge2.from(), numStates),
-																				VerificationUltility.hash(tempEdge1.to(), tempEdge2.to(), numStates),
+					DirectedEdge newEdge = new DirectedEdgeWithInputOutputCommon(VerificationUtility.hash(tempEdge1.from(), tempEdge2.from(), numStates),
+																				VerificationUtility.hash(tempEdge1.to(), tempEdge2.to(), numStates),
 																				tempEdge1.getInput(), tempEdge2.getOutput(), tempEdge1.getOutput());
 					result.addEdge(newEdge);
 				}
@@ -33,13 +33,13 @@ public class L2TransducerComposition {
 		}
 		
 		//set init
-		result.setSourceVertex(VerificationUltility.hash(graph.getSourceVertex(), graph.getSourceVertex(), numStates));
+		result.setSourceVertex(VerificationUtility.hash(graph.getSourceVertex(), graph.getSourceVertex(), numStates));
 		
 		//set accepting states
 		Set<Integer> acceptings = new HashSet<Integer>();
 		for(int accept1: graph.getDestVertices()){
 			for(int accept2: graph.getDestVertices()){
-				acceptings.add(VerificationUltility.hash(accept1, accept2, numStates));
+				acceptings.add(VerificationUtility.hash(accept1, accept2, numStates));
 			}
 		}
 		

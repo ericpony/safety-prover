@@ -1,9 +1,9 @@
 package verification;
 
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import learning.NoInvariantException;
 import main.LOGGER;
 
@@ -29,14 +29,14 @@ public class FiniteStateSets {
         Set<List<Integer>> reachable = reachableStates.get(wordLen);
         if (reachable == null) {
             // Compute initial states for the given word length
-            List<List<Integer>> initialStates = AutomataConverter.getWords(I, wordLen);
+            List<List<Integer>> initialStates = AutomataUtility.getWords(I, wordLen);
             Queue<List<Integer>> todo = new ArrayDeque<List<Integer>>(initialStates);
             reachable = new HashSet<List<Integer>>(initialStates);
 
             while (!todo.isEmpty()) {
                 List<Integer> next = todo.poll();
-                List<List<Integer>> post = AutomataConverter.getWords(
-                        AutomataConverter.getImage(next, T, numLetters),
+                List<List<Integer>> post = AutomataUtility.getWords(
+                        VerificationUtility.getImage(next, T, numLetters),
                         wordLen);
                 for (List<Integer> w : post) {
                     if (!reachable.contains(w)) {
@@ -57,33 +57,33 @@ public class FiniteStateSets {
             LOGGER.debug("computing automaton describing reachable configurations of length " + wordLen);
 
             // initial configurations are those in I with length wordLen
-            reachable = AutomataConverter.getWordAutomaton(I, wordLen);
+            reachable = AutomataUtility.getWordAutomaton(I, wordLen);
 
             // do one transition from the initial configurations
-            reachable = AutomataConverter.minimiseAcyclic(
-                    VerificationUltility.getUnion(
+            reachable = AutomataUtility.minimiseAcyclic(
+                    AutomataUtility.getUnion(
                             reachable,
-                            VerificationUltility.getImage(reachable, T)));
+                            VerificationUtility.getImage(reachable, T)));
             Automata newConfig = reachable;
 
             while (true) {
                 // check whether any new configurations exist
-                if (AutomataConverter.getWords(newConfig, wordLen, 1).isEmpty()) break;
+                if (AutomataUtility.getWords(newConfig, wordLen, 1).isEmpty()) break;
 
                 LOGGER.debug("reachable " + reachable.getStates().length +
                         ", new " + newConfig.getStates().length);
 
-                Automata post = AutomataConverter.minimiseAcyclic(
-                        VerificationUltility.getImage(newConfig, T));
+                Automata post = AutomataUtility.minimiseAcyclic(
+                        VerificationUtility.getImage(newConfig, T));
 
-                newConfig = AutomataConverter.minimiseAcyclic(
-                        VerificationUltility.getDifference(post, reachable));
+                newConfig = AutomataUtility.minimiseAcyclic(
+                        AutomataUtility.getDifference(post, reachable));
 
-                reachable = AutomataConverter.minimiseAcyclic(
-                        VerificationUltility.getUnion(reachable, post));
+                reachable = AutomataUtility.minimiseAcyclic(
+                        AutomataUtility.getUnion(reachable, post));
             }
 
-            List<Integer> cex = AutomataConverter.getSomeWord(VerificationUltility.getIntersection(reachable, B));
+            List<Integer> cex = AutomataUtility.findSomeWord(AutomataUtility.getIntersection(reachable, B));
             if (cex != null) throw new NoInvariantException(cex, I, T);
 
             reachableStateAutomata.put(wordLen, reachable);

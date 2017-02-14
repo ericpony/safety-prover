@@ -1,7 +1,7 @@
 package learning;
 
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import common.finiteautomata.language.InclusionCheckingImpl;
 
 import java.util.HashSet;
@@ -39,14 +39,14 @@ public class LStarTest {
 
                 InclusionCheckingImpl ic = new InclusionCheckingImpl();
 
-                List<Integer> ex = ic.findCounterExample(hyp, AutomataConverter.toCompleteDFA(sol));
+                List<Integer> ex = ic.findCounterExample(hyp, AutomataUtility.toCompleteDFA(sol));
                 if (ex != null) {
                     System.out.println("negative cex: " + ex);
                     cex.addNegative(ex);
                     return false;
                 }
 
-                ex = ic.findCounterExample(sol, AutomataConverter.toCompleteDFA(hyp));
+                ex = ic.findCounterExample(sol, AutomataUtility.toCompleteDFA(hyp));
                 if (ex != null) {
                     System.out.println("positive cex: " + ex);
                     cex.addPositive(ex);

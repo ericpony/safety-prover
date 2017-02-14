@@ -2,10 +2,10 @@ package main;
 
 import common.TimbukPrinter;
 import common.Timer;
-import common.VerificationUltility;
+import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
-import common.finiteautomata.AutomataConverter;
+import common.finiteautomata.AutomataUtility;
 import common.finiteautomata.language.InclusionCheckingImpl;
 import de.libalf.LibALFFactory;
 import encoding.ISatSolverFactory;
@@ -46,12 +46,12 @@ public class Main {
     /// directory name of the output
     private final static String OUTPUT_DIR = "output";
     final static int timeout = 60;  // 60 seconds
-    final static Mode mode = Mode.ANGLUIN;
+    final static Mode mode = Mode.HOMEBREW;
     static Task task = Task.CHECK_SAFETY;
 
     public static void main(String[] args) {
 
-        //LOGGER.setLevel(Level.OFF);
+        LOGGER.setLevel(Level.OFF);
 
         if (args.length < 1) {
             System.err.println("No input, doing nothing.");
@@ -109,8 +109,9 @@ public class Main {
                         Writer out = new BufferedWriter(new FileWriter(
                                 modelFile.getParent() + File.separatorChar + outputFileName
                         ), 10000);
-                        model = parse(modelFile.getPath());
-                        TimbukPrinter.print(model, modelName, out);
+                        TimbukPrinter printer =
+                                new TimbukPrinter(parse(modelFile.getPath()), modelName);
+                        printer.printTo(out);
                         System.out.println("done.");
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -166,8 +167,8 @@ public class Main {
             System.err.println("\nSuccessfully found an invariant for " + name);
             System.err.println("#S : " + invariant.getNumStates() + ", #T : " + invariant.getNumTransitions() + "\n");
 
-            invariant = AutomataConverter.pruneUnreachableStates(AutomataConverter.toDFA(invariant));
-            invariant = AutomataConverter.toMinimalDFA(AutomataConverter.toCompleteDFA(invariant));
+            invariant = AutomataUtility.pruneUnreachableStates(AutomataUtility.toDFA(invariant));
+            invariant = AutomataUtility.toMinimalDFA(AutomataUtility.toCompleteDFA(invariant));
             LOGGER.debug("VERDICT: Bad configurations are not reachable from any " +
                     (model.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
             LOGGER.debug("\n");
@@ -183,28 +184,28 @@ public class Main {
         Automata newConfig = I;
         LOGGER.debug(I.prettyPrint("Initial", indexToLabel));
         while (true) {
-            Automata post = AutomataConverter.minimiseAcyclic(
-                    VerificationUltility.getImage(newConfig, T));
+            Automata post = AutomataUtility.minimiseAcyclic(
+                    VerificationUtility.getImage(newConfig, T));
 
             //LOGGER.debug(post.prettyPrint("Post", indexToLabel));
 
             Timer.tick();
 
-            newConfig = AutomataConverter.minimiseAcyclic(
-                    VerificationUltility.getDifference(post, reachable));
+            newConfig = AutomataUtility.minimiseAcyclic(
+                    AutomataUtility.getDifference(post, reachable));
 
             Timer.tick();
 
             LOGGER.debug("reachable " + reachable.getStates().length + ", new " + newConfig.getStates().length);
 
             if (new InclusionCheckingImpl().isSubSetOf(
-                    newConfig, AutomataConverter.toCompleteDFA(reachable)))
+                    newConfig, AutomataUtility.toCompleteDFA(reachable)))
                 break;
 
             Timer.tick();
 
-            reachable = AutomataConverter.minimiseAcyclic(
-                    VerificationUltility.getUnion(reachable, post));
+            reachable = AutomataUtility.minimiseAcyclic(
+                    AutomataUtility.getUnion(reachable, post));
 
             Timer.tick();
         }
@@ -249,20 +250,20 @@ public class Main {
     private static void determize(RegularModel problem) {
         EdgeWeightedDigraph T = problem.getT();
 
-        if (!VerificationUltility.isDFA(T, problem.getNumberOfLetters())) {
-            T = VerificationUltility.toDFA(problem.getT(), problem.getNumberOfLetters());
+        if (!VerificationUtility.isDFA(T, problem.getNumberOfLetters())) {
+            T = VerificationUtility.toDFA(problem.getT(), problem.getNumberOfLetters());
             problem.setT(T);
         }
 
         Automata I = problem.getI();
         if (!I.isDFA()) {
-            I = AutomataConverter.toDFA(I);
+            I = AutomataUtility.toDFA(I);
             problem.setI(I);
         }
 
         Automata B = problem.getB();
         if (!B.isDFA()) {
-            B = AutomataConverter.toDFA(B);
+            B = AutomataUtility.toDFA(B);
             problem.setB(B);
         }
     }
