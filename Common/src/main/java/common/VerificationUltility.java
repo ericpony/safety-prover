@@ -672,6 +672,39 @@ public class VerificationUltility {
         return result;
     }
 
+    public static List<List<Integer>> findSomeTrace(
+            List<Integer> target, Automata from,
+            EdgeWeightedDigraph function
+    ) {
+        List<List<Integer>> trace = new ArrayList<>();
+        Automata init = AutomataConverter.getWordAutomaton(from, target.size());
+        boolean isFound = findSomeTraceHelper(init, function, target, trace);
+        return isFound ? trace : null;
+    }
+
+    private static boolean findSomeTraceHelper(
+            Automata from,
+            EdgeWeightedDigraph function,
+            List<Integer> target,
+            List<List<Integer>> trace
+    ) {
+        if (from.accepts(target)) {
+            trace.add(target);
+            return true;
+        }
+        int numLetters = from.getNumLabels();
+        List<List<Integer>> range = AutomataConverter.getWords(
+                AutomataConverter.getPreImage(target, function, numLetters), target.size());
+        for (List<Integer> word : range) {
+            boolean isFound = findSomeTraceHelper(from, function, word, trace);
+            if (isFound) {
+                trace.add(target);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /*
      * counterExample[i] contains labels i.th of words
      * return list of words
@@ -698,6 +731,7 @@ public class VerificationUltility {
     /**
      * Compute the set of all words x such that (x, y) \in fun for some y
      */
+
     public static Automata computeDomain(EdgeWeightedDigraph fun,
                                          int numLabels) {
         Automata result = new Automata(fun.getSourceVertex(),

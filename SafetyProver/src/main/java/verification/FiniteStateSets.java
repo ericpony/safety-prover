@@ -84,7 +84,7 @@ public class FiniteStateSets {
             }
 
             List<Integer> cex = AutomataConverter.getSomeWord(VerificationUltility.getIntersection(reachable, B));
-            if (cex != null) throw new NoInvariantException(cex);
+            if (cex != null) throw new NoInvariantException(cex, I, T);
 
             reachableStateAutomata.put(wordLen, reachable);
         }
