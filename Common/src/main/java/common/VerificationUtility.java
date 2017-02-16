@@ -5,6 +5,7 @@ import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataUtility;
+import common.finiteautomata.State;
 
 import java.util.*;
 
@@ -349,6 +350,38 @@ public class VerificationUtility {
         return completeTransducer;
     }
 
+    public static EdgeWeightedDigraph computeSquare(EdgeWeightedDigraph graph) {
+        int numStates = graph.getNumVertices();
+        EdgeWeightedDigraph result = new EdgeWeightedDigraph(numStates * numStates);
+
+        for (DirectedEdge edge1 : graph.getEdges()) {
+            DirectedEdgeWithInputOutput tempEdge1 = (DirectedEdgeWithInputOutput) edge1;
+            for (DirectedEdge edge2 : graph.getEdges()) {
+                DirectedEdgeWithInputOutput tempEdge2 = (DirectedEdgeWithInputOutput) edge2;
+                if (tempEdge1.getOutput() == tempEdge2.getInput()) {
+                    DirectedEdge newEdge = new DirectedEdgeWithInputOutput(
+                            VerificationUtility.hash(tempEdge1.from(), tempEdge2.from(), numStates),
+                            VerificationUtility.hash(tempEdge1.to(), tempEdge2.to(), numStates),
+                            tempEdge1.getInput(), tempEdge2.getOutput());
+                    result.addEdge(newEdge);
+                }
+            }
+        }
+        //set init
+        result.setSourceVertex(VerificationUtility.hash(graph.getSourceVertex(), graph.getSourceVertex(), numStates));
+
+        //set accepting states
+        Set<Integer> acceptings = new HashSet<Integer>();
+        for (int accept1 : graph.getDestVertices()) {
+            for (int accept2 : graph.getDestVertices()) {
+                acceptings.add(VerificationUtility.hash(accept1, accept2, numStates));
+            }
+        }
+
+        result.setDestVertices(acceptings);
+        return result;
+    }
+
     public static boolean isComplete(EdgeWeightedDigraph transducer, int numLetters) {
         int numStates = transducer.getNumVertices();
 
@@ -500,6 +533,32 @@ public class VerificationUtility {
             }
         }
         return false;
+    }
+
+    public static EdgeWeightedDigraph minimise(EdgeWeightedDigraph graph, int numLetters) {
+        numLetters += 1;
+        Automata aut = new Automata(graph.getSourceVertex(),
+                graph.getNumVertices(), numLetters * numLetters);
+        for (DirectedEdge e : graph.getEdges()) {
+            DirectedEdgeWithInputOutput edge = (DirectedEdgeWithInputOutput) e;
+            int label = (edge.getInput() + 1) * numLetters + (edge.getOutput() + 1);
+            aut.addTrans(edge.from(), label, edge.to());
+        }
+        aut.setAcceptingStateIds(graph.getDestVertices());
+        aut = AutomataUtility.minimise(aut);
+        EdgeWeightedDigraph res = new EdgeWeightedDigraph(
+                aut.getNumStates(), aut.getInitStateId(), aut.getAcceptingStateIds());
+        for (State s : aut.getStates()) {
+            for (int label : s.getOutgoingLabels()) {
+                int from = s.getId();
+                int input = (label / numLetters) - 1;
+                int output = (label % numLetters) - 1;
+                for (int to : s.getDestIds(label)) {
+                    res.addEdge(new DirectedEdgeWithInputOutput(from, to, input, output));
+                }
+            }
+        }
+        return res;
     }
 
     /*
