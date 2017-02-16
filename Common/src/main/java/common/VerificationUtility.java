@@ -506,7 +506,7 @@ public class VerificationUtility {
             List<Integer> target, Automata from,
             EdgeWeightedDigraph function
     ) {
-        final List<List<Integer>> trace = new ArrayList<>();
+        final LinkedList<List<Integer>> trace = new LinkedList<>();
         final Automata init = AutomataUtility.getWordAutomaton(from, target.size());
         final boolean isFound = findSomeTraceHelper(init, function, target, trace);
         return isFound ? trace : null;
@@ -516,22 +516,22 @@ public class VerificationUtility {
             Automata from,
             EdgeWeightedDigraph function,
             List<Integer> target,
-            List<List<Integer>> trace
+            LinkedList<List<Integer>> trace
     ) {
+        trace.addFirst(target);
         if (from.accepts(target)) {
-            trace.add(target);
             return true;
         }
         final int numLetters = from.getNumLabels();
         final List<List<Integer>> range = AutomataUtility.getWords(
                 getPreImage(target, function, numLetters), target.size());
         for (List<Integer> word : range) {
-            boolean isFound = findSomeTraceHelper(from, function, word, trace);
-            if (isFound) {
-                trace.add(target);
+            if (trace.contains(word))
+                continue;
+            if (findSomeTraceHelper(from, function, word, trace))
                 return true;
-            }
         }
+        trace.removeFirst();
         return false;
     }
 

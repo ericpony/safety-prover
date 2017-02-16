@@ -22,8 +22,8 @@ public class NoInvariantException extends RuntimeException {
             return null;
         } else {
             List<String> labeledTrace = new ArrayList<>(trace.size());
-            for (String word : labeledTrace) {
-                labeledTrace.add(word);
+            for (List<Integer> word : trace) {
+                labeledTrace.add(getLabeledWord(word));
             }
             return labeledTrace;
         }
