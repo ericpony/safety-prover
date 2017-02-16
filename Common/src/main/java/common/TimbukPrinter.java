@@ -108,10 +108,10 @@ public class TimbukPrinter {
         String tau_str = "let tau_str = " + getString(model.getT()) + " in\n";
         String preamble = "open Taml;;\n" + "open Dxn;;\n" + "open Colapsing_v3;;\n" + "let " + nameS + " _ = \n";
         String execution = "print_string \"Checking model " + name + "...\";\n" +
-                "atrmc_strpres_bwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ bad_str ];\n" +
+                "(* atrmc_strpres_bwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ bad_str ]; *)\n" +
                 "(* atrmc_strpres_fwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ bad_str ]; *)\n" +
                 "(* atrmc_strpres_fwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ sigstar_str ]; *)\n" +
-                "(* atrmc_strpres_bwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ sigstar_str ]; *)\n" +
+                "atrmc_strpres_bwcomp_bwcoll_allstpred sigma_str init_str tau_str bad_str [ sigstar_str ];\n" +
                 "();;\n" + nameS + "();;";
         out.write(preamble);
         out.write(sigma_str);
