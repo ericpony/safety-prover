@@ -1,0 +1,186 @@
+// water-jug.txt
+//
+// Each state is represented as [X;Y], where X and Y
+// are gallons of water represented in binary.
+// The first state indicates four actions among A, B, C, D, and Z.
+// A: try to pour water from X to Y and decrease X by one gallon
+// B: try to pour water from X to Y and increase Y by one gallon
+// C: try to pour water from Y to X and decrease Y by one gallon
+// D: try to pour water from Y to X and increase X by one gallon
+// Z: free to take any actions
+// Pouring process is taking place iff the state is in {A,B,C,D}.
+
+// The capacities of X and Y are some multiples of 3,
+// with the capacity of X no larger than that of Y.
+Initial {
+    init: s0;
+    s0 -> t0 Z;
+    t0 -> t1 00;
+    t1 -> t0 00;
+    t0 -> t2;
+    t2 -> t3 20;
+    t3 -> t2 20;
+    accepting: t2;
+}
+
+closedUnderTransitions;
+
+Transition {
+    init: s0;
+
+    // try to pour water from X to Y:
+    // decrease X
+    s0 -> q1 Z/A;
+    s0 -> q1 B/A;
+    q1 -> s2 10/00;
+    q1 -> s2 11/01;
+    q1 -> q2 00/10;
+    q1 -> q2 01/11;
+    q2 -> q2 00/10;
+    q2 -> q2 01/11;
+    q2 -> s2 10/00;
+    q2 -> s2 11/01;
+    s2 -> s2 00/00;
+    s2 -> s2 01/01;
+    s2 -> s2 10/10;
+    s2 -> s2 11/11;
+    s2 -> s2 20/20;
+    s2 -> s2 21/21; // accept s2
+
+    // try to pour water from X to Y:
+    // increase Y
+    s0 -> q4 A/B;
+    q4 -> s2 00/01;
+    q4 -> s2 10/11;
+    q4 -> q5 01/00;
+    q4 -> q5 11/10;
+    q5 -> q5 01/00;
+    q5 -> q5 11/10;
+    q5 -> s2 00/01;
+    q5 -> s2 10/11;
+
+    // try to pour water from X to Y:
+    // X is empty
+    s0 -> s3 B/Z;
+    s3 -> s3 00/00;
+    s3 -> s3 01/01;
+    s3 -> s3 20/20;
+    s3 -> s3 21/21; // accept s3
+
+    // try to pour water from X to Y:
+    // Y is full
+    s0 -> s4 B/Z;
+    s4 -> s4 01/01;
+    s4 -> s4 11/11;
+    s4 -> s4 21/21;
+    s4 -> s4 21/21; // accept s4
+
+    // try to pour water from Y to X:
+    // decrease Y
+    s0 -> p1 Z/C;
+    s0 -> p1 D/C;
+    p1 -> s2 01/00;
+    p1 -> s2 11/10;
+    p1 -> p2 00/01;
+    p1 -> p2 10/11;
+    p2 -> p2 00/01;
+    p2 -> p2 10/11;
+    p2 -> s2 01/00;
+    p2 -> s2 11/10;
+
+    // try to pour water from Y to X:
+    // increase X
+    s0 -> p4 C/D;
+    p4 -> s2 00/10;
+    p4 -> s2 01/11;
+    p4 -> p5 10/00;
+    p4 -> p5 11/01;
+    p5 -> p5 10/00;
+    p5 -> p5 11/01;
+    p5 -> s2 00/10;
+    p5 -> s2 01/11;
+
+    // try to pour water from Y to X:
+    // Y is empty
+    s0 -> s5 D/Z;
+    s5 -> s5 00/00;
+    s5 -> s5 10/10;
+    s5 -> s5 20/20;
+    s5 -> s5 20/20; // accept s5
+
+    // try to pour water from Y to X:
+    // X is full
+    s0 -> s6 D/Z;
+    s6 -> s6 10/10;
+    s6 -> s6 11/11;
+    s6 -> s6 20/20;
+    s6 -> s6 21/21; // accept s6
+
+    // fill X to its capacity
+    s0 -> s1 Z/Z;
+    s1 -> s1 11/11;
+    s1 -> s1 10/10;
+    s1 -> s1 01/11;
+    s1 -> s1 00/10;
+    s1 -> s1 21/21;
+    s1 -> s1 20/20;
+    
+    // empty X
+    s0 -> s8 Z/Z;
+    s8 -> s8 11/01;
+    s8 -> s8 10/00;
+    s8 -> s8 01/01;
+    s8 -> s8 00/00;
+    s8 -> s8 21/21;
+    s8 -> s8 20/20;
+
+    // fill Y to its capacity
+    s0 -> s7 Z/Z;
+    s7 -> s7 11/11;
+    s7 -> s7 10/11;
+    s7 -> s7 01/01;
+    s7 -> s7 00/01;
+    s7 -> s7 21/21;
+    s7 -> s7 20/21;
+
+    // empty Y
+    s0 -> s7 Z/Z;
+    s9 -> s9 11/10;
+    s9 -> s9 10/10;
+    s9 -> s9 01/00;
+    s9 -> s9 00/00;
+    s9 -> s9 21/20;
+    s9 -> s9 20/20;
+
+    accepting: s1, s2, s3, s4, s5, s6, s7, s8, s9;
+}
+
+// The gallons of water in the jugs are [n;0] or [0;n],
+// where n is any multiple of 2 except zero.
+Bad {
+    init: s0;
+    s0 -> s1 Z;
+    s1 -> s2 00;
+    s2 -> s2 00;
+    s2 -> s3 01;
+    s3 -> s3 00;
+    s3 -> s3 01;
+    s3 -> s3 20;
+    s3 -> s3 21;
+
+    s0 -> t1 Z;
+    t1 -> t2 00;
+    t2 -> t2 00;
+    t2 -> t3 10;
+    t3 -> t3 00;
+    t3 -> t3 10;
+    t3 -> t3 20;
+    t3 -> t3 20;
+
+    accepting: s3, t3;
+}
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 10;
+automatonStateGuessing: 0 .. 4;
