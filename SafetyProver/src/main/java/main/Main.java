@@ -14,6 +14,8 @@ import grammar.Yylex;
 import grammar.parser;
 import learning.*;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import verification.MonolithicVerifier;
 import visitor.AllVisitorImpl;
@@ -25,7 +27,8 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class Main {
-    //    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
+
     public enum Mode {
         HOMEBREW,
         FIXEDPOINT,
@@ -44,26 +47,36 @@ public class Main {
     //LingelingSolver.FACTORY;          // Lingeling
 
     /// directory name of the output
-    private final static String OUTPUT_DIR = "output";
+    final static String OUTPUT_DIR = "output";
     final static int timeout = 60;  // 60 seconds
-    final static Mode mode = Mode.HOMEBREW;
+    static Mode mode = Mode.HOMEBREW;
     static Task task = Task.CHECK_SAFETY;
 
     public static void main(String[] args) {
-
-        LOGGER.setLevel(Level.OFF);
-
+        Configurator.setRootLevel(Level.OFF);
         if (args.length < 1) {
             System.err.println("No input, doing nothing.");
             return;
         }
-
         ArrayList<File> modelFiles = new ArrayList<>();
         for (String arg : args) {
             if (arg.charAt(0) == '-') {
-                switch (arg.substring(1)) {
+                String option = arg.substring(arg.charAt(1) == '-' ? 2 : 1);
+                switch (option) {
                     case "convert":
                         task = Task.CONVERT_FOR_ARTMC;
+                        break;
+                    case "debug":
+                        Configurator.setRootLevel(Level.DEBUG);
+                        break;
+                    case "verbose":
+                        Configurator.setRootLevel(Level.INFO);
+                        break;
+                    case "sat":
+                        mode = Mode.SAT_CEGAR;
+                        break;
+                    case "fixpoint":
+                        mode = Mode.FIXEDPOINT;
                         break;
                 }
             } else {
@@ -124,12 +137,12 @@ public class Main {
 
     static long checkModel(RegularModel model, String name, Mode mode)
             throws Timer.TimeoutException {
-        if (model.getLogLevel() <= 0)
-            Configurator.setRootLevel(Level.ERROR);
-        else if (model.getLogLevel() == 1)
-            Configurator.setRootLevel(Level.INFO);
-        else
-            Configurator.setRootLevel(Level.ALL);
+//        if (model.getLogLevel() <= 0)
+//            Configurator.setRootLevel(Level.ERROR);
+//        else if (model.getLogLevel() == 1)
+//            Configurator.setRootLevel(Level.INFO);
+//        else
+//            Configurator.setRootLevel(Level.ALL);
 
         determize(model);
 

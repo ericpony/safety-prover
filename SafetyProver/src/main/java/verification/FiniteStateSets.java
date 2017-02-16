@@ -5,13 +5,14 @@ import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataUtility;
 import learning.NoInvariantException;
-import main.LOGGER;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 
 public class FiniteStateSets {
 
-    //private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
     private final Automata I, B;
     private final EdgeWeightedDigraph T;
     private final Map<Integer, Set<List<Integer>>> reachableStates =
@@ -55,15 +56,20 @@ public class FiniteStateSets {
         Automata reachable = reachableStateAutomata.get(wordLen);
         if (reachable == null) {
             LOGGER.debug("computing automaton describing reachable configurations of length " + wordLen);
+            EdgeWeightedDigraph trans = T;
+
+//            if (trans.getNumVertices() < 400)
+//                trans = VerificationUtility.minimise(
+//                        VerificationUtility.computeSquare(trans),
+//                        I.getNumLabels());
 
             // initial configurations are those in I with length wordLen
             reachable = AutomataUtility.getWordAutomaton(I, wordLen);
 
             // do one transition from the initial configurations
-            reachable = AutomataUtility.minimiseAcyclic(
-                    AutomataUtility.getUnion(
-                            reachable,
-                            VerificationUtility.getImage(reachable, T)));
+            reachable = AutomataUtility.minimise(
+                    AutomataUtility.getUnion(reachable,
+                            VerificationUtility.getImage(reachable, trans)));
             Automata newConfig = reachable;
 
             while (true) {
@@ -73,13 +79,13 @@ public class FiniteStateSets {
                 LOGGER.debug("reachable " + reachable.getStates().length +
                         ", new " + newConfig.getStates().length);
 
-                Automata post = AutomataUtility.minimiseAcyclic(
-                        VerificationUtility.getImage(newConfig, T));
+                Automata post = AutomataUtility.minimise(
+                        VerificationUtility.getImage(newConfig, trans));
 
-                newConfig = AutomataUtility.minimiseAcyclic(
+                newConfig = AutomataUtility.minimise(
                         AutomataUtility.getDifference(post, reachable));
 
-                reachable = AutomataUtility.minimiseAcyclic(
+                reachable = AutomataUtility.minimise(
                         AutomataUtility.getUnion(reachable, post));
             }
 

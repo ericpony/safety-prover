@@ -12,7 +12,8 @@ import elimination.CEElimination;
 import elimination.TransitivityPairSet;
 import encoding.*;
 import learning.NoInvariantException;
-import main.LOGGER;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.TimeoutException;
 
@@ -20,8 +21,8 @@ import java.io.FileNotFoundException;
 import java.util.*;
 
 public class ReachabilityChecking {
-    //private static final Logger LOGGER = LogManager.getLogger();
 
+    private static final Logger LOGGER = LogManager.getLogger();
     private Map<String, Integer> labelToIndex = new HashMap<String, Integer>();
     /// directory name of the output
     private final static String OUTPUT_DIR = "output";
@@ -44,7 +45,6 @@ public class ReachabilityChecking {
 
     private AutomataEncoding automataBEncoding = null;
     private TransducerEncoding transducerEncoding = null;
-    private RankingFunction rankingFunctionEncoding = null;
     private TransitivityPairSet transitivitySet = null;
 
     private final CEElimination ceElimination;
@@ -74,7 +74,7 @@ public class ReachabilityChecking {
             LOGGER.debug("Encoding automaton");
             automataBEncoding.encode();
             if (lexicographicOrder) {
-                rankingFunctionEncoding = new RankingFunction(solver, transducerNumStates, numLetters);
+                RankingFunction rankingFunctionEncoding = new RankingFunction(solver, transducerNumStates, numLetters);
                 LOGGER.debug("Encoding ranking function");
                 rankingFunctionEncoding.encode();
             } else {

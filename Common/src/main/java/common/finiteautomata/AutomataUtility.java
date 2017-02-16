@@ -5,15 +5,11 @@ import common.VerificationUtility;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import de.libalf.BasicAutomaton;
 import de.libalf.BasicTransition;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 
 
 public class AutomataUtility {
-    private static final Logger LOGGER = LogManager.getLogger();
-
     public static Automata toDFA(Automata automata) {
         List<State> allStatesDFA = new ArrayList<State>();
         Map<Set<Integer>, State> mapStates = new HashMap<Set<Integer>, State>();

@@ -9,7 +9,7 @@ import common.VerificationUtility;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
-import verification.L2TransducerComposition.DirectedEdgeWithInputOutputCommon;
+import verification.TransducerComposition.DirectedEdgeWithInputOutputCommon;
 
 public class L2TransducerInclusionChecking {
 
