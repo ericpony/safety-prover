@@ -4,7 +4,8 @@ import common.Tuple;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataUtility;
-import main.LOGGER;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import verification.FiniteStateSets;
 import verification.InductivenessChecking;
 import verification.SubsetChecking;
@@ -13,7 +14,7 @@ import java.util.List;
 
 public class BasicRMCTeacher extends RMCTeacher {
 
-    //public static final Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger();
     protected Automata relevantStates;
     protected FiniteStateSets finiteStates;
 
@@ -26,12 +27,13 @@ public class BasicRMCTeacher extends RMCTeacher {
     public boolean isAccepted(List<Integer> word) {
         boolean isReachable = finiteStates.isReachable(word);
         boolean isBad = getBadStates().accepts(word);
+        String labeledWord = LOGGER.isDebugEnabled() ? NoInvariantException.getLabeledWord(word) : null;
         if (isReachable && isBad) {
-            LOGGER.debug("membership query: " + word);
+            LOGGER.debug("membership query: " + labeledWord);
             throw new NoInvariantException(word, getInitialStates(), getTransition());
         }
         boolean accepted = isReachable && !isBad;
-        LOGGER.debug("membership query: " + word + " -> " + (accepted ? "accepted" : "rejected"));
+        LOGGER.debug("membership query: " + labeledWord + " -> " + (accepted ? "accepted" : "rejected"));
         return accepted;
     }
 
@@ -44,7 +46,10 @@ public class BasicRMCTeacher extends RMCTeacher {
         sc = new SubsetChecking(getInitialStates(), hyp);
         ex = sc.check();
         if (ex != null) {
-            LOGGER.debug("An initial configuration is not contained in hypothesis: " + ex);
+            if (LOGGER.isDebugEnabled()) {
+                String word = NoInvariantException.getLabeledWord(ex);
+                LOGGER.debug("An initial configuration is not contained in hypothesis: " + word);
+            }
             cex.addPositive(ex);
             return false;
         }
@@ -53,9 +58,10 @@ public class BasicRMCTeacher extends RMCTeacher {
         Automata lang = AutomataUtility.getIntersection(hyp, getBadStates());
         ex = AutomataUtility.findSomeShortestWord(lang);
         if (ex != null) {
-//            if (finiteStates.isReachable(ex))
-//                throw new NoInvariantException(ex);
-            LOGGER.debug("A bad configuration is contained in hypothesis: " + ex);
+            if (LOGGER.isDebugEnabled()) {
+                String word = NoInvariantException.getLabeledWord(ex);
+                LOGGER.debug("A bad configuration is contained in hypothesis: " + word);
+            }
             cex.addNegative(ex);
             return false;
         }
@@ -76,17 +82,21 @@ public class BasicRMCTeacher extends RMCTeacher {
         }
         */
 
-
         // fourth test: is the invariant inductive?
         InductivenessChecking ic = new InductivenessChecking(hyp, relevantStates, getTransition(), getNumLetters());
         Tuple<List<Integer>> xy = ic.check();
         if (xy != null) {
-            LOGGER.debug("Hypothesis is not inductive: " + xy);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Hypothesis is not inductive: ");
+                String x = NoInvariantException.getLabeledWord(xy.x);
+                String y = NoInvariantException.getLabeledWord(xy.y);
+                LOGGER.debug(x + " => " + y);
+            }
             if (finiteStates.isReachable(xy.x)) {
-                LOGGER.debug(" => Configuration " + xy.y + " should be included due to inductiveness.");
+                LOGGER.debug("* The second configuration should be included in the hypothesis.");
                 cex.addPositive(xy.y);
             } else {
-                LOGGER.debug(" => Configuration " + xy.x + " is unreachable and should be excluded.");
+                LOGGER.debug("* The first configuration should be excluded from the hypothesis.");
                 cex.addNegative(xy.x);
             }
             return false;

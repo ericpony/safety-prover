@@ -1,6 +1,8 @@
 package verification;
 
 import common.DOTPrinter;
+import common.Timer;
+import common.Tuple;
 import common.bellmanford.DirectedEdge;
 import common.bellmanford.DirectedEdgeWithInputOutput;
 import common.bellmanford.EdgeWeightedDigraph;
@@ -9,8 +11,7 @@ import common.finiteautomata.AutomataUtility;
 import elimination.CEElimination;
 import elimination.TransitivityPairSet;
 import encoding.*;
-import common.Timer;
-import common.Tuple;
+import learning.NoInvariantException;
 import main.LOGGER;
 import org.sat4j.specs.ContradictionException;
 import org.sat4j.specs.TimeoutException;
@@ -128,8 +129,10 @@ public class ReachabilityChecking {
                     SubsetChecking l0 = new SubsetChecking(I, invariant);
                     List<Integer> w = l0.check();
                     if (w != null) {
-                        LOGGER.debug("Invariant does't contain all initial configurations! Counterexample:");
-                        LOGGER.debug(w);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Invariant does't contain all initial configurations! Counterexample:");
+                            LOGGER.debug(NoInvariantException.getLabeledWord(w));
+                        }
                         ceElimination.ce0Elimination(automataBEncoding, w);
                         oldCounterExamples.addL0B(w);
                         continue;
@@ -147,8 +150,11 @@ public class ReachabilityChecking {
                             numLetters);
                     Tuple<List<Integer>> xy = l1.check();
                     if (xy != null) {
-                        LOGGER.debug("Invariant is not inductive! Counterexample:");
-                        LOGGER.debug(xy);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Invariant is not inductive! Counterexample:");
+                            LOGGER.debug(NoInvariantException.getLabeledWord(xy.x)
+                                    + " implies " + NoInvariantException.getLabeledWord(xy.y));
+                        }
                         ceElimination.ce1Elimination(automataBEncoding, xy);
                         oldCounterExamples.addL1(xy);
                         continue;
@@ -163,8 +169,10 @@ public class ReachabilityChecking {
                 List<Integer> cex = AutomataUtility.findSomeShortestWord(inter);
 //                List<Integer> cex = new SubsetChecking(F, AutomataConverter.getComplement(automatonB)).check();
                 if (cex != null) {
-                    LOGGER.debug("Invariant contain bad configurations! Counterexample:");
-                    LOGGER.debug(cex);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Invariant contain bad configurations! Counterexample:");
+                        LOGGER.debug(NoInvariantException.getLabeledWord(cex));
+                    }
                     solver.addClause(new int[]{-automataBEncoding.acceptWord(cex)});
                     continue;
                 }

@@ -19,6 +19,10 @@ public class LOGGER {
         ctx.updateLoggers();
     }
 
+    public static boolean isDebugEnabled() {
+        return LOGGER.isDebugEnabled();
+    }
+
     public static void debug(Object msg) {
         if (LOGGER == null) setLevel(Level.DEBUG);
         LOGGER.debug(msg);
