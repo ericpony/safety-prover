@@ -67,7 +67,7 @@ public class FiniteStateSets {
             reachable = AutomataUtility.getWordAutomaton(I, wordLen);
 
             // do one transition from the initial configurations
-            reachable = AutomataUtility.minimise(
+            reachable = AutomataUtility.minimiseAcyclic(
                     AutomataUtility.getUnion(reachable,
                             VerificationUtility.getImage(reachable, trans)));
             Automata newConfig = reachable;
@@ -79,13 +79,13 @@ public class FiniteStateSets {
                 LOGGER.debug("reachable " + reachable.getStates().length +
                         ", new " + newConfig.getStates().length);
 
-                Automata post = AutomataUtility.minimise(
+                Automata post = AutomataUtility.minimiseAcyclic(
                         VerificationUtility.getImage(newConfig, trans));
 
-                newConfig = AutomataUtility.minimise(
+                newConfig = AutomataUtility.minimiseAcyclic(
                         AutomataUtility.getDifference(post, reachable));
 
-                reachable = AutomataUtility.minimise(
+                reachable = AutomataUtility.minimiseAcyclic(
                         AutomataUtility.getUnion(reachable, post));
             }
 

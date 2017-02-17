@@ -197,14 +197,14 @@ public class Main {
         Automata newConfig = I;
         LOGGER.debug(I.prettyPrint("Initial", indexToLabel));
         while (true) {
-            Automata post = AutomataUtility.minimiseAcyclic(
+            Automata post = AutomataUtility.minimise(
                     VerificationUtility.getImage(newConfig, T));
 
             //LOGGER.debug(post.prettyPrint("Post", indexToLabel));
 
             Timer.tick();
 
-            newConfig = AutomataUtility.minimiseAcyclic(
+            newConfig = AutomataUtility.minimise(
                     AutomataUtility.getDifference(post, reachable));
 
             Timer.tick();
@@ -217,7 +217,7 @@ public class Main {
 
             Timer.tick();
 
-            reachable = AutomataUtility.minimiseAcyclic(
+            reachable = AutomataUtility.minimise(
                     AutomataUtility.getUnion(reachable, post));
 
             Timer.tick();
