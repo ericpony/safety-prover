@@ -31,9 +31,9 @@ public class Main {
 
     public enum Mode {
         HOMEBREW,
+        LIBALF,
         FIXEDPOINT,
-        ANGLUIN,
-        SAT_CEGAR
+        SAT_ENUMERATION
     }
 
     public enum Task {
@@ -48,9 +48,10 @@ public class Main {
 
     /// directory name of the output
     final static String OUTPUT_DIR = "output";
-    final static int timeout = 60;  // 60 seconds
+    static int timeout = 0;
     static Mode mode = Mode.HOMEBREW;
     static Task task = Task.CHECK_SAFETY;
+    static LibALFFactory.Algorithm libalfFlag = null;
 
     public static void main(String[] args) {
         Configurator.setRootLevel(Level.OFF);
@@ -59,7 +60,8 @@ public class Main {
             return;
         }
         ArrayList<File> modelFiles = new ArrayList<>();
-        for (String arg : args) {
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
             if (arg.charAt(0) == '-') {
                 String option = arg.substring(arg.charAt(1) == '-' ? 2 : 1);
                 switch (option) {
@@ -73,10 +75,47 @@ public class Main {
                         Configurator.setRootLevel(Level.INFO);
                         break;
                     case "sat":
-                        mode = Mode.SAT_CEGAR;
+                        mode = Mode.SAT_ENUMERATION;
                         break;
                     case "fixpoint":
                         mode = Mode.FIXEDPOINT;
+                        break;
+                    case "timeout":
+                        i++;
+                        if (args.length <= i) {
+                            System.err.println("You forgot to specify the timeout.");
+                        } else {
+                            try {
+                                timeout = Integer.parseInt(args[i]);
+                            } catch (NumberFormatException e) {
+                                System.err.println("Invalid timeout: " + args[i]);
+                            }
+                        }
+                        if (timeout <= 0) return;
+                        break;
+                    case "libalf":
+                        i++;
+                        if (args.length <= i) {
+                            System.err.println("You forgot to specify the algorithm.");
+                        } else {
+                            String algorithm = args[i];
+                            try {
+                                libalfFlag = LibALFFactory.Algorithm.valueOf(algorithm);
+                            } catch (IllegalArgumentException e) {
+                                System.err.println("Invalid algorithm: " + algorithm);
+                            }
+                        }
+                        if (libalfFlag == null) {
+                            System.err.println("Supported algorithms: "
+                                    + Arrays.toString(new Object[]{
+                                    LibALFFactory.Algorithm.ANGLUIN,
+                                    LibALFFactory.Algorithm.ANGLUIN_COLUMN,
+                                    //LibALFFactory.Algorithm.NL_STAR,
+                                    LibALFFactory.Algorithm.KEARNS_VAZIRANI,
+                                    LibALFFactory.Algorithm.RIVEST_SCHAPIRE}));
+                            return;
+                        }
+                        mode = Mode.LIBALF;
                         break;
                 }
             } else {
@@ -86,14 +125,13 @@ public class Main {
                 } else if (in.isDirectory()) {
                     modelFiles.addAll(Arrays.asList(in.listFiles()));
                 } else {
-                    System.err.println("Input file is not a valid model.");
+                    System.err.println("Input file doesn't exit.");
                     return;
                 }
             }
         }
         if (modelFiles.size() == 0) return;
 
-        Timer.setMilliTimeout(timeout * 1000);
         for (File modelFile : modelFiles) {
             if (!modelFile.isFile()) continue;
             String modelFileName = modelFile.getName();
@@ -102,16 +140,20 @@ public class Main {
             modelFile = modelFile.getAbsoluteFile();
             switch (task) {
                 case CHECK_SAFETY:
-                    System.out.println("Checking " + modelFileName + "...");
+                    System.out.println("Checking " + modelFileName + " using "
+                            + mode + (libalfFlag != null ? "(" + libalfFlag + ")" : "")
+                            + (timeout > 0 ? " with timeout " + timeout + " seconds" : "")
+                            + "...");
+                    Timer.setMilliTimeout(timeout * 1000);
                     RegularModel model = parse(modelFile.getPath());
                     try {
                         long elapsedTime = checkModel(model, modelFileName, mode);
                         int millisec = (int) (elapsedTime / 1e6);
-                        System.out.println("Elapsed time for " + modelFileName + " : " + millisec + " ms.");
+                        System.out.println("Elapsed time for " + modelFileName + " : " + millisec + " ms.\n");
                     } catch (Timer.TimeoutException e) {
-                        System.out.println("Timeout proving " + modelFileName + " within " + timeout + " seconds.");
+                        System.out.println("Timeout proving " + modelFileName + " within " + timeout + " seconds.\n");
                     } catch (SatInvariantNotFoundException e) {
-                        System.out.println(e);
+                        System.out.println(e.toString());
                     }
                     break;
                 case CONVERT_FOR_ARTMC:
@@ -134,7 +176,6 @@ public class Main {
         }
     }
 
-
     static long checkModel(RegularModel model, String name, Mode mode)
             throws Timer.TimeoutException {
 //        if (model.getLogLevel() <= 0)
@@ -146,48 +187,75 @@ public class Main {
 
         determize(model);
 
-        Timer.start();
-        Map<Integer, String> indexToLabel = model.getIndexToLabel();
-        NoInvariantException.setIndexToLabelMapping(indexToLabel);
-        Automata invariant = null;
-        //if(problem.getPrecomputedInv()) {
-        switch (mode) {
-            case HOMEBREW:
-                Learner learner = new LStarLearner();
-                Teacher teacher = new BasicRMCTeacher(model.getNumberOfLetters(),
-                        model.getI(), model.getB(), model.getT());
-                invariant = MonolithicLearning.inferWith(learner, teacher);
-                break;
-            case ANGLUIN:
-                learner = new LibALFLearner(LibALFFactory.Algorithm.ANGLUIN);
-                teacher = new BasicRMCTeacher(model.getNumberOfLetters(),
-                        model.getI(), model.getB(), model.getT());
-                invariant = MonolithicLearning.inferWith(learner, teacher);
-                break;
-            case FIXEDPOINT:
-                invariant = findReachabilitySet(model.getI(), model.getT(), indexToLabel);
-                break;
-            case SAT_CEGAR:
-                MonolithicVerifier verifier = new MonolithicVerifier
-                        (model, SOLVER_FACTORY, model.getUseRankingFunctions());
-                invariant = verifier.verify();
-                break;
-        }
-        Timer.stop();
-        if (invariant == null) {
-            System.err.print("\nTimeout in proving safety for " + name + "\n");
-        } else {
-            System.err.println("\nSuccessfully found an invariant for " + name);
-            System.err.println("#S : " + invariant.getNumStates() + ", #T : " + invariant.getNumTransitions() + "\n");
+        System.out.println("Model statistics (after determinization): ");
+        System.out.println("[I]"
+                + " #L: " + model.getI().getNumLabels()
+                + "\t#S: " + model.getI().getNumStates()
+                + "\t#T: " + model.getI().getNumTransitions());
+        System.out.println("[T]"
+                + " #S: " + model.getT().getNumVertices()
+                + "\t#T: " + model.getT().getNumEdges());
+        System.out.println("[B]"
+                + " #L: " + model.getB().getNumLabels()
+                + "\t#S: " + model.getB().getNumStates()
+                + "\t#T: " + model.getB().getNumTransitions());
+        Timer.TimeoutException timeoutException = null;
+        MonolithicLearning classroom = null;
+        try {
+            Timer.start();
+            Map<Integer, String> indexToLabel = model.getIndexToLabel();
+            NoInvariantException.setIndexToLabelMapping(indexToLabel);
+            Automata invariant = null;
+            //if(problem.getPrecomputedInv()) {
+            switch (mode) {
+                case HOMEBREW:
+                    Learner learner = new LStarLearner();
+                    Teacher teacher = new BasicRMCTeacher(model.getNumberOfLetters(),
+                            model.getI(), model.getB(), model.getT());
+                    classroom = new MonolithicLearning(learner, teacher);
+                    invariant = classroom.infer();
+                    break;
+                case LIBALF:
+                    learner = new LibALFLearner(libalfFlag);
+                    teacher = new BasicRMCTeacher(model.getNumberOfLetters(),
+                            model.getI(), model.getB(), model.getT());
+                    classroom = new MonolithicLearning(learner, teacher);
+                    invariant = classroom.infer();
+                    break;
+                case FIXEDPOINT:
+                    invariant = findReachabilitySet(model.getI(), model.getT(), indexToLabel);
+                    break;
+                case SAT_ENUMERATION:
+                    MonolithicVerifier verifier = new MonolithicVerifier
+                            (model, SOLVER_FACTORY, model.getUseRankingFunctions());
+                    invariant = verifier.verify();
+                    break;
+            }
+            Timer.stop();
+            if (invariant == null) {
+                System.err.print("\nTimeout in proving safety for " + name + "\n");
+            } else {
+                System.err.println("\nSuccessfully found an invariant for " + name);
+                System.err.println("#S : " + invariant.getNumStates() + ", #T : " + invariant.getNumTransitions() + "\n");
 
-            invariant = AutomataUtility.pruneUnreachableStates(AutomataUtility.toDFA(invariant));
-            invariant = AutomataUtility.toMinimalDFA(AutomataUtility.toCompleteDFA(invariant));
-            LOGGER.debug("VERDICT: Bad configurations are not reachable from any " +
-                    (model.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
-            LOGGER.debug("\n");
-            LOGGER.debug("// Configurations visited by the program are contained in");
-            LOGGER.debug(invariant.prettyPrint("Invariant", indexToLabel));
+                invariant = AutomataUtility.pruneUnreachableStates(AutomataUtility.toDFA(invariant));
+                invariant = AutomataUtility.toMinimalDFA(AutomataUtility.toCompleteDFA(invariant));
+                LOGGER.debug("VERDICT: Bad configurations are not reachable from any " +
+                        (model.getCloseInitStates() ? "reachable" : "initial") + " configuration.");
+                LOGGER.debug("\n");
+                LOGGER.debug("// Configurations visited by the program are contained in");
+                LOGGER.debug(invariant.prettyPrint("Invariant", indexToLabel));
+            }
+        } catch (Timer.TimeoutException ex) {
+            timeoutException = ex;
         }
+        if (classroom != null) {
+            System.out.println("# of membership queries: " + classroom.getNumMembershipQueries());
+            System.out.println("# of equivalence queries: " + classroom.getNumEquivalenceQueries());
+            System.out.println("Max. sizes of queried words: " + classroom.getMaxQuerySize());
+            System.out.println("Max. sizes of counterexamples: " + classroom.getMaxCounterexampleSize());
+        }
+        if (timeoutException != null) throw timeoutException;
         return Timer.getElapsedTime();
     }
 
@@ -199,27 +267,18 @@ public class Main {
         while (true) {
             Automata post = AutomataUtility.minimise(
                     VerificationUtility.getImage(newConfig, T));
-
             //LOGGER.debug(post.prettyPrint("Post", indexToLabel));
-
             Timer.tick();
-
             newConfig = AutomataUtility.minimise(
                     AutomataUtility.getDifference(post, reachable));
-
             Timer.tick();
-
             LOGGER.debug("reachable " + reachable.getStates().length + ", new " + newConfig.getStates().length);
-
             if (new InclusionCheckingImpl().isSubSetOf(
                     newConfig, AutomataUtility.toCompleteDFA(reachable)))
                 break;
-
             Timer.tick();
-
             reachable = AutomataUtility.minimise(
                     AutomataUtility.getUnion(reachable, post));
-
             Timer.tick();
         }
         return reachable;
