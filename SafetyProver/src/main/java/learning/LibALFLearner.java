@@ -1,5 +1,6 @@
 package learning;
 
+import common.Timer;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataUtility;
 import de.libalf.BasicAutomaton;
@@ -42,9 +43,9 @@ public class LibALFLearner extends Learner {
         algorithm = factory.createLearningAlgorithm(algorithmType, knowledgebase, getNumLetters());
     }
 
-    public Automata solve() {
+    public Automata solve()
+            throws Timer.TimeoutException {
         final Teacher teacher = getTeacher();
-
         /**
          * An BasicAutomaton automaton is created and initialized to null. The
          * automaton is used to store the a conjecture which is marked correct
@@ -80,7 +81,11 @@ public class LibALFLearner extends Learner {
                 }
             } else {
                 CounterExample cex = new CounterExample();
-                if (teacher.isCorrectLanguage(AutomataUtility.Alf2SLRP(conjecture), cex)) {
+                Automata conj = AutomataUtility.Alf2SLRP(conjecture);
+                if (algorithmType == LibALFFactory.Algorithm.NL_STAR && !conjecture.isDFA()) {
+                    conj = AutomataUtility.toDFA(conj);
+                }
+                if (teacher.isCorrectLanguage(conj, cex)) {
                     automaton = conjecture;
                 } else {
                     List<Integer> ex = cex.get();
@@ -89,9 +94,12 @@ public class LibALFLearner extends Learner {
                 }
             }
         } while (automaton == null);
-        // Present result
-        //System.out.println("\nResult:\n\n" + automaton.toDot());
-        return AutomataUtility.Alf2SLRP(automaton);
+
+        Automata result = AutomataUtility.Alf2SLRP(automaton);
+        if (algorithmType == LibALFFactory.Algorithm.NL_STAR && !automaton.isDFA()) {
+            result = AutomataUtility.toDFA(result);
+        }
+        return result;
     }
 
     private Integer[] ints2Integers(int[] ints) {
