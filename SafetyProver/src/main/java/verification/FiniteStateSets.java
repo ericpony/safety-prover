@@ -1,5 +1,6 @@
 package verification;
 
+import common.Timer;
 import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
@@ -52,7 +53,8 @@ public class FiniteStateSets {
         return reachable;
     }
 
-    public Automata getReachableStateAutomaton(int wordLen) {
+    public Automata getReachableStateAutomaton(int wordLen)
+            throws Timer.TimeoutException {
         Automata reachable = reachableStateAutomata.get(wordLen);
         if (reachable == null) {
             LOGGER.debug("computing automaton describing reachable configurations of length " + wordLen);
@@ -79,12 +81,13 @@ public class FiniteStateSets {
                 LOGGER.debug("reachable " + reachable.getStates().length +
                         ", new " + newConfig.getStates().length);
 
+                Timer.tick();
                 Automata post = AutomataUtility.minimiseAcyclic(
                         VerificationUtility.getImage(newConfig, trans));
-
+                Timer.tick();
                 newConfig = AutomataUtility.minimiseAcyclic(
                         AutomataUtility.getDifference(post, reachable));
-
+                Timer.tick();
                 reachable = AutomataUtility.minimiseAcyclic(
                         AutomataUtility.getUnion(reachable, post));
             }
@@ -97,7 +100,8 @@ public class FiniteStateSets {
         return reachable;
     }
 
-    public boolean isReachable(List<Integer> word) {
+    public boolean isReachable(List<Integer> word)
+            throws Timer.TimeoutException {
         return getReachableStateAutomaton(word.size()).accepts(word);
     }
 }

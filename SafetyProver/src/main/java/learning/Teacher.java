@@ -1,5 +1,6 @@
 package learning;
 
+import common.Timer;
 import common.finiteautomata.Automata;
 
 import java.util.List;
@@ -12,9 +13,11 @@ public abstract class Teacher {
         this.numLetters = numLetters;
     }
 
-    abstract public boolean isAccepted(List<Integer> word);
+    abstract public boolean isAccepted(List<Integer> word)
+            throws Timer.TimeoutException;
 
-    abstract public boolean isCorrectLanguage(Automata sol, CounterExample cex);
+    abstract public boolean isCorrectLanguage(Automata sol, CounterExample cex)
+            throws Timer.TimeoutException;
 
     public final int getNumLetters() {
         return numLetters;

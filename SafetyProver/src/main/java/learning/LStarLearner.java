@@ -1,5 +1,6 @@
 package learning;
 
+import common.Timer;
 import common.finiteautomata.Automata;
 import common.finiteautomata.State;
 
@@ -12,7 +13,8 @@ public class LStarLearner extends Learner {
     private List<List<Integer>> distWords = new ArrayList<List<Integer>>();
     private static final List<Integer> emptyWord = new ArrayList<Integer>();
 
-    protected void setup() {
+    protected void setup()
+            throws Timer.TimeoutException {
         final Teacher teacher = getTeacher();
         final int numLetters = getNumLetters();
         final boolean initAccepting = teacher.isAccepted(emptyWord);
@@ -42,11 +44,14 @@ public class LStarLearner extends Learner {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    public Automata solve() {
+    public Automata solve()
+            throws Timer.TimeoutException {
         if (solution != null) return solution;
 
-        Teacher teacher = getTeacher();
-        if (teacher == null) throw new IllegalStateException("Must set teacher before calling setup().");
+        final Teacher teacher = getTeacher();
+        if (teacher == null)
+            throw new IllegalStateException("Must set teacher before calling setup().");
+
         CounterExample cex = new CounterExample();
         final List<List<Integer>> accessWords = new ArrayList<List<Integer>>();
         classTree.collectLeafWords(accessWords);
@@ -56,11 +61,9 @@ public class LStarLearner extends Learner {
 
         while (cont) {
             final List<Integer> ex = cex.get();
-            // analyze the counterexampe
-            int currentState = hypAut.getInitStateId();
             final List<Integer> prefix = new ArrayList<Integer>();
             Node lastSifted = null;
-
+            int currentState = hypAut.getInitStateId();
             int j = 0;
             while (j <= ex.size()) {
                 final Node sifted = classTree.sift(prefix);
@@ -172,7 +175,8 @@ public class LStarLearner extends Learner {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    private Automata extractAutomaton(List<List<Integer>> accessWords) {
+    private Automata extractAutomaton(List<List<Integer>> accessWords)
+            throws Timer.TimeoutException {
         final Map<List<Integer>, Integer> accessIndex = new HashMap<List<Integer>, Integer>();
         final int numLetters = getNumLetters();
 
@@ -225,7 +229,8 @@ public class LStarLearner extends Learner {
             this.right = right;
         }
 
-        public Node sift(List<Integer> w) {
+        public Node sift(List<Integer> w)
+                throws Timer.TimeoutException {
             if (left == null && right == null) {
                 return this;
             } else {

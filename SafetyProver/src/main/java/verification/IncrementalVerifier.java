@@ -119,7 +119,8 @@ public class IncrementalVerifier {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    public void setup() {
+    public void setup()
+            throws Timer.TimeoutException {
         player1Configs = VerificationUtility.computeDomain(problem.getPlayer1(),
                 problem.getNumberOfLetters());
         winningStates = problem.getB();
@@ -133,7 +134,7 @@ public class IncrementalVerifier {
             Learner learner = new LStarLearner();
             Teacher teacher = new BasicRMCTeacher(problem.getNumberOfLetters(),
                     problem.getI(), problem.getB(), problem.getT());
-            systemInvariant = MonolithicLearning.inferWith(learner, teacher);
+            systemInvariant = new MonolithicLearning(learner, teacher).infer();
         } else {
             systemInvariant = AutomataUtility.getUniversalAutomaton(problem.getNumberOfLetters());
         }
@@ -580,59 +581,61 @@ public class IncrementalVerifier {
     ////////////////////////////////////////////////////////////////////////////
 
     private boolean checkConvergence() {
-        checkConvergence:
-        while (true) {
-            SubsetChecking checking =
-                    new SubsetChecking
-                            (AutomataUtility.getIntersection(systemInvariant,
-                                    player1Configs),
-                                    winningStates);
-            List<Integer> cex = checking.check();
-            if (cex == null)
-                return true;
+        try {
+            checkConvergence:
+            while (true) {
+                SubsetChecking checking =
+                        new SubsetChecking
+                                (AutomataUtility.getIntersection(systemInvariant,
+                                        player1Configs),
+                                        winningStates);
+                List<Integer> cex = checking.check();
+                if (cex == null)
+                    return true;
 
-            if (finiteStates.isReachable(cex)) {
-                assert (cex.size() > explorationBound);
-                explorationBound = cex.size();
-                LOGGER.info("now checking configurations up to length " + explorationBound);
-                break checkConvergence;
-            } else {
-                LOGGER.debug("" + cex + " is not reachable, strengthening invariant");
+                if (finiteStates.isReachable(cex)) {
+                    assert (cex.size() > explorationBound);
+                    explorationBound = cex.size();
+                    LOGGER.info("now checking configurations up to length " + explorationBound);
+                    break checkConvergence;
+                } else {
+                    LOGGER.debug("" + cex + " is not reachable, strengthening invariant");
 
-                OldCounterExamples oldCEs = new OldCounterExamples();
-                Automata newInv = null;
-                Automata knownInv =
-                        AutomataUtility.getIntersection
-                                (systemInvariant,
-                                        AutomataUtility.getComplement(problem.getB()));
-                for (int num = 1; num < 20 && newInv == null; ++num) {
-                    RelativeInvariantSynth invSynth =
-                            new RelativeInvariantSynth(SOLVER_FACTORY,
-                                    problem.getNumberOfLetters(),
-                                    problem.getI(), knownInv,
-                                    problem.getPlayer1(),
-                                    problem.getT(),
-                                    cex, oldCEs, num);
-                    newInv = invSynth.infer();
-                }
+                    OldCounterExamples oldCEs = new OldCounterExamples();
+                    Automata newInv = null;
+                    Automata knownInv =
+                            AutomataUtility.getIntersection
+                                    (systemInvariant,
+                                            AutomataUtility.getComplement(problem.getB()));
+                    for (int num = 1; num < 20 && newInv == null; ++num) {
+                        RelativeInvariantSynth invSynth =
+                                new RelativeInvariantSynth(SOLVER_FACTORY,
+                                        problem.getNumberOfLetters(),
+                                        problem.getI(), knownInv,
+                                        problem.getPlayer1(),
+                                        problem.getT(),
+                                        cex, oldCEs, num);
+                        newInv = invSynth.infer();
+                    }
 
-                systemInvariant =
-                        AutomataUtility.getIntersection(systemInvariant, newInv);
-
-                assert (systemInvariant.isDFA());
-
-                if (!systemInvariant.isCompleteDFA()) {
                     systemInvariant =
-                            AutomataUtility.toCompleteDFA(systemInvariant);
+                            AutomataUtility.getIntersection(systemInvariant, newInv);
+
+                    assert (systemInvariant.isDFA());
+
+                    if (!systemInvariant.isCompleteDFA()) {
+                        systemInvariant =
+                                AutomataUtility.toCompleteDFA(systemInvariant);
+                    }
+
+                    systemInvariant =
+                            AutomataUtility.toMinimalDFA(systemInvariant);
+
+                    LOGGER.debug("new system invariant is " + systemInvariant);
                 }
-
-                systemInvariant =
-                        AutomataUtility.toMinimalDFA(systemInvariant);
-
-                LOGGER.debug("new system invariant is " + systemInvariant);
-            }
-        } // checkConvergence
-
+            } // checkConvergence
+        } catch (Timer.TimeoutException e) {
+        }
         return false;
     }
 

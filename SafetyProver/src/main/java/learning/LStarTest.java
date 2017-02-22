@@ -1,5 +1,6 @@
 package learning;
 
+import common.Timer;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataUtility;
 import common.finiteautomata.language.InclusionCheckingImpl;
@@ -10,7 +11,8 @@ import java.util.Set;
 
 public class LStarTest {
     // simple test for the Lstar algorithm
-    public static void main(String[] args) {
+    public static void main(String[] args)
+            throws Timer.TimeoutException {
         final Automata sol = new Automata(0, 4, 2);
         final Set<Integer> accept = new HashSet<Integer>();
         accept.add(3);

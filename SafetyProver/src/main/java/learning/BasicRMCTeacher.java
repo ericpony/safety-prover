@@ -1,5 +1,6 @@
 package learning;
 
+import common.Timer;
 import common.Tuple;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
@@ -24,7 +25,9 @@ public class BasicRMCTeacher extends RMCTeacher {
         finiteStates = new FiniteStateSets(I, T, B);
     }
 
-    public boolean isAccepted(List<Integer> word) {
+    public boolean isAccepted(List<Integer> word)
+            throws Timer.TimeoutException {
+        Timer.tick();
         boolean isReachable = finiteStates.isReachable(word);
         boolean isBad = getBadStates().accepts(word);
         String labeledWord = LOGGER.isDebugEnabled() ? NoInvariantException.getLabeledWord(word) : null;
@@ -34,10 +37,13 @@ public class BasicRMCTeacher extends RMCTeacher {
         }
         boolean accepted = isReachable && !isBad;
         LOGGER.debug("membership query: " + labeledWord + " -> " + (accepted ? "accepted" : "rejected"));
+        Timer.tick();
         return accepted;
     }
 
-    public boolean isCorrectLanguage(Automata hyp, CounterExample cex) {
+    public boolean isCorrectLanguage(Automata hyp, CounterExample cex)
+            throws Timer.TimeoutException {
+        Timer.tick();
         LOGGER.debug("found hypothesis, size " + hyp.getStates().length);
         List<Integer> ex;
         SubsetChecking sc;
@@ -45,6 +51,7 @@ public class BasicRMCTeacher extends RMCTeacher {
         // first test: are initial states contained?
         sc = new SubsetChecking(getInitialStates(), hyp);
         ex = sc.check();
+        Timer.tick();
         if (ex != null) {
             if (LOGGER.isDebugEnabled()) {
                 String word = NoInvariantException.getLabeledWord(ex);
@@ -57,6 +64,7 @@ public class BasicRMCTeacher extends RMCTeacher {
         // second test: are bad configurations excluded?
         Automata lang = AutomataUtility.getIntersection(hyp, getBadStates());
         ex = AutomataUtility.findSomeShortestWord(lang);
+        Timer.tick();
         if (ex != null) {
             if (LOGGER.isDebugEnabled()) {
                 String word = NoInvariantException.getLabeledWord(ex);
@@ -65,7 +73,6 @@ public class BasicRMCTeacher extends RMCTeacher {
             cex.addNegative(ex);
             return false;
         }
-        // reachable?
 
         /*
         // third test: are concrete unreachable configurations excluded?
@@ -74,6 +81,7 @@ public class BasicRMCTeacher extends RMCTeacher {
                     AutomataConverter.getWordAutomaton(hyp, l),
                     finiteStates.getReachableStateAutomaton(l));
             cex = sc.check();
+            Timer.tick();
             if (cex != null) {
                 LOGGER.debug("An unreachable configuration is contained in hypothesis: " + cex);
                 negCEX.add(cex);
@@ -81,10 +89,10 @@ public class BasicRMCTeacher extends RMCTeacher {
             }
         }
         */
-
         // fourth test: is the invariant inductive?
         InductivenessChecking ic = new InductivenessChecking(hyp, relevantStates, getTransition(), getNumLetters());
         Tuple<List<Integer>> xy = ic.check();
+        Timer.tick();
         if (xy != null) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Hypothesis is not inductive: ");
