@@ -49,8 +49,8 @@ public class Main {
     /// directory name of the output
     final static String OUTPUT_DIR = "output";
     static int timeout = 0;
-    static Mode mode = Mode.HOMEBREW;
-    static Task task = Task.CHECK_SAFETY;
+    static Mode mode = null;
+    static Task task = null;
     static LibALFFactory.Algorithm libalfFlag = null;
 
     public static void main(String[] args) {
@@ -66,6 +66,10 @@ public class Main {
                 String option = arg.substring(arg.charAt(1) == '-' ? 2 : 1);
                 switch (option) {
                     case "convert":
+                        if (mode != null || task != null) {
+                            System.err.println("Conflicting option: " + arg);
+                            return;
+                        }
                         task = Task.CONVERT_FOR_ARTMC;
                         break;
                     case "debug":
@@ -75,12 +79,26 @@ public class Main {
                         Configurator.setRootLevel(Level.INFO);
                         break;
                     case "sat":
+                        if (mode != null || task != null) {
+                            System.err.println("Conflicting option: " + arg);
+                            return;
+                        }
+                        task = Task.CHECK_SAFETY;
                         mode = Mode.SAT_ENUMERATION;
                         break;
                     case "fixpoint":
+                        if (mode != null || task != null) {
+                            System.err.println("Conflicting option: " + arg);
+                            return;
+                        }
+                        task = Task.CHECK_SAFETY;
                         mode = Mode.FIXEDPOINT;
                         break;
                     case "timeout":
+                        if (timeout > 0) {
+                            System.err.println("Conflicting option: " + arg);
+                            return;
+                        }
                         i++;
                         if (args.length <= i) {
                             System.err.println("You forgot to specify the timeout.");
@@ -94,6 +112,10 @@ public class Main {
                         if (timeout <= 0) return;
                         break;
                     case "libalf":
+                        if (task != null || mode != null || libalfFlag != null) {
+                            System.err.println("Conflicting option: " + arg);
+                            return;
+                        }
                         i++;
                         if (args.length <= i) {
                             System.err.println("You forgot to specify the algorithm.");
@@ -110,11 +132,12 @@ public class Main {
                                     + Arrays.toString(new Object[]{
                                     LibALFFactory.Algorithm.ANGLUIN,
                                     LibALFFactory.Algorithm.ANGLUIN_COLUMN,
-                                    //LibALFFactory.Algorithm.NL_STAR,
+                                    LibALFFactory.Algorithm.NL_STAR,
                                     LibALFFactory.Algorithm.KEARNS_VAZIRANI,
                                     LibALFFactory.Algorithm.RIVEST_SCHAPIRE}));
                             return;
                         }
+                        task = Task.CHECK_SAFETY;
                         mode = Mode.LIBALF;
                         break;
                 }
@@ -130,7 +153,13 @@ public class Main {
                 }
             }
         }
+
         if (modelFiles.size() == 0) return;
+
+        if (task == null) {
+            task = Task.CHECK_SAFETY;
+            if (mode == null) mode = Mode.HOMEBREW;
+        }
 
         for (File modelFile : modelFiles) {
             if (!modelFile.isFile()) continue;
