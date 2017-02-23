@@ -1,0 +1,85 @@
+// coffee-can.txt
+// This example models David Gries's coffee can problem as described in
+// "Regular Symmetry Patterns".
+//
+// Each configuration has form 1*0*21*0*, where
+// the first character indicates the parity of the number of white beans
+// at the beginning, and the lengths of the first and the second sequences 
+// of 1s correspond to the numbers of white and black beans, respectively,
+// in the current can.
+
+// An odd numbrt of white beans at the beginning
+Initial {
+    init: s0;
+
+    s0 -> s1 1;
+    s1 -> s0 1;
+    s1 -> s1 0;
+    s1 -> s2 2;
+    s2 -> s2 1;
+    s2 -> s3;
+    s3 -> s3 0;
+
+    accepting: s2, s3;
+}
+
+closedUnderTransitions;
+
+// Rule 1: if B ≥ 2, then B := B − 1 and W := W
+// Rule 2: if W ≥ 2, then B := B + 1 and W := W − 2
+// Rule 3: if B ≥ 1 and W ≥ 1, then B := B − 1 and W := W
+Transition {
+    init: s0;
+
+    // Rule 1
+    s0 -> r0;
+    r0 -> r0 1/1;
+    r0 -> r0 0/0;
+    r0 -> r1 2/2;
+    r1 -> r1 1/1;
+    r1 -> r2 1/1;
+    r2 -> r3 1/0;
+    r3 -> r3 0/0;
+
+    // Rule 2
+    s0 -> q0;
+    q0 -> q0 1/1;
+    q0 -> q1 1/0;
+    q1 -> q2 1/0;
+    q2 -> q2 0/0;
+    q2 -> q4 2/2;
+    q4 -> q4 1/1;
+    q4 -> q3 0/1;
+    q3 -> q3 0/0;
+
+    // Rule 3
+    s0 -> t0;
+    t0 -> t0 1/1;
+    t0 -> t1 1/1;
+    t1 -> t1 0/0;
+    t1 -> t2 2/2;
+    t2 -> t2 1/1;
+    t2 -> t3 1/0;
+    t3 -> t3 0/0;
+
+    accepting: r3, q3, t3;
+}
+
+// The last bean is black & the initial number of white coffee is odd
+Bad {
+    init: s0;
+
+    s0 -> s0 0;
+    s0 -> s1 2;
+    s1 -> s2 1;
+    s2 -> s2 0;
+
+    accepting: s2;
+}
+
+logLevel: 2;
+
+monolithicWitness;
+
+transducerStateGuessing: 1 .. 10;
+automatonStateGuessing: 0 .. 4;
