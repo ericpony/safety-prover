@@ -12,13 +12,13 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TimbukPrinter {
+public class ModelGeneratorARMC {
     final Map<Integer, String> indexToLabel;
     final RegularModel model;
     final String rootLabel;
     final String name;
 
-    public TimbukPrinter(RegularModel model, String name) {
+    public ModelGeneratorARMC(RegularModel model, String name) {
         this.model = model;
         this.name = name;
         Map<Integer, String> map = model.getIndexToLabel();
