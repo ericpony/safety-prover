@@ -1,9 +1,9 @@
 package verification;
 
+import common.Timer;
 import common.finiteautomata.Automata;
 import encoding.ISatSolverFactory;
 import learning.SatInvariantNotFoundException;
-import common.Timer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import visitor.RegularModel;
@@ -71,7 +71,7 @@ public class MonolithicVerifier {
                         checking.setAutomataNumStates(numStateAutomata);
                         checking.setNumLetters(problem.getNumberOfLetters());
                         checking.setTransducerNumStates(numStateTransducer);
-                        checking.setLabelToIndex(problem.getLabelToIndex());
+                        checking.setIndexToLabel(problem.getIndexToLabel());
                         checking.setOldCounterExamples(oldCEs);
                         checking.setup();
                         Automata invariant = checking.findNextSolution();

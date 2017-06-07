@@ -23,21 +23,20 @@ public class DOTPrinter {
     public static void saveModel(RegularModel problem, String outputDir) {
         try {
             DOTPrinter.writeOut(DOTPrinter.getString(problem.getI(),
-                    problem.getLabelToIndex()), outputDir + File.separator + "init.dot");
+                    problem.getIndexToLabel()), outputDir + File.separator + "init.dot");
             DOTPrinter.writeOut(DOTPrinter.getString(problem.getB(),
-                    problem.getLabelToIndex()), outputDir + File.separator + "bad.dot");
+                    problem.getIndexToLabel()), outputDir + File.separator + "bad.dot");
             DOTPrinter.writeOut(DOTPrinter.getString(problem.getT(),
-                    problem.getLabelToIndex()), outputDir + File.separator + "trans.dot");
+                    problem.getIndexToLabel()), outputDir + File.separator + "trans.dot");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    public static String getString(Automata automata, Map<String, Integer> labelToIndex) {
+    public static String getString(Automata automata, Map<Integer, String> indexToLabel) {
         final String NEW_LINE = "\n";
         final String SPACE = " ";
         StringBuilder sb = new StringBuilder();
-
         sb.append("digraph finite_state_machine {");
         sb.append(NEW_LINE);
         sb.append("rankdir=LR;");
@@ -54,10 +53,9 @@ public class DOTPrinter {
         sb.append(NEW_LINE);
         sb.append("node [shape = circle];");
         sb.append(NEW_LINE);
-
         for (State state : automata.getStates()) {
             for (int i = Automata.EPSILON_LABEL; i < automata.getNumLabels(); i++) {
-                String label = (i == Automata.EPSILON_LABEL) ? "" : String.valueOf(getLabel(labelToIndex, i));
+                String label = (i == Automata.EPSILON_LABEL) ? "" : indexToLabel.get(i);
                 Set<Integer> nexts = state.getDestIds(i);
                 for (Integer next : nexts) {
                     sb.append(state.getId() + " -> " + next + " [ label = \"" + label + "\" ];");
@@ -65,19 +63,16 @@ public class DOTPrinter {
                 }
             }
         }
-
         // denote the initial state (special value for the beginning of input arrow)
-        sb.append(DOT_INIT_NODE_NUM + "[shape = point ];");
+        sb.append(DOT_INIT_NODE_NUM + "[shape = point];");
         sb.append(NEW_LINE);
         sb.append(DOT_INIT_NODE_NUM + " -> " + automata.getInitStateId() + ";");
         sb.append(NEW_LINE);
-
         sb.append("}");
-
         return sb.toString();
     }
 
-    public static String getString(EdgeWeightedDigraph transducer, Map<String, Integer> labelToIndex) {
+    public static String getString(EdgeWeightedDigraph transducer, Map<Integer, String> indexToLabel) {
         final String NEW_LINE = "\n";
         final String SPACE = " ";
         StringBuilder sb = new StringBuilder();
@@ -105,8 +100,8 @@ public class DOTPrinter {
                     (tempEdge.getOutput() == common.finiteautomata.Automata.EPSILON_LABEL)) {
                 edgeLab = "";
             } else {
-                String inputLabel = getLabel(labelToIndex, tempEdge.getInput());
-                String outputLabel = getLabel(labelToIndex, tempEdge.getOutput());
+                String inputLabel = indexToLabel.get(tempEdge.getInput());
+                String outputLabel = indexToLabel.get(tempEdge.getOutput());
                 edgeLab = inputLabel + "/" + outputLabel;
             }
 
@@ -123,16 +118,6 @@ public class DOTPrinter {
         sb.append("}");
 
         return sb.toString();
-    }
-
-    public static String getLabel(Map<String, Integer> labelToIndex, int value) {
-        for (String key : labelToIndex.keySet()) {
-            if (labelToIndex.get(key) == value) {
-                return key;
-            }
-        }
-
-        throw new RuntimeException("Invalid index " + value + " for input/output!");
     }
 
     public static void writeOut(String content, String fileName)

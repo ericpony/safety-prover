@@ -23,7 +23,7 @@ import java.util.*;
 public class ReachabilityChecking {
 
     private static final Logger LOGGER = LogManager.getLogger();
-    private Map<String, Integer> labelToIndex = new HashMap<String, Integer>();
+    private Map<Integer, String> indexToLabel = new HashMap<>();
     /// directory name of the output
     private final static String OUTPUT_DIR = "output";
 
@@ -144,10 +144,7 @@ public class ReachabilityChecking {
                 ////////////////////////////////////////////////////////
                 if (closeUnderTransitions) {
                     InductivenessChecking l1 = new InductivenessChecking(
-                            invariant,
-                            AutomataUtility.getComplement(B),
-                            T,
-                            numLetters);
+                            invariant, T, numLetters);
                     Tuple<List<Integer>> xy = l1.check();
                     if (xy != null) {
                         if (LOGGER.isDebugEnabled()) {
@@ -348,9 +345,9 @@ public class ReachabilityChecking {
     private void writeToDot(Automata invariant,
                             EdgeWeightedDigraph transducer) {
         try {
-            DOTPrinter.writeOut(DOTPrinter.getString(invariant, labelToIndex),
+            DOTPrinter.writeOut(DOTPrinter.getString(invariant, indexToLabel),
                     OUTPUT_DIR + "/invariant.dot");
-            DOTPrinter.writeOut(DOTPrinter.getString(transducer, labelToIndex),
+            DOTPrinter.writeOut(DOTPrinter.getString(transducer, indexToLabel),
                     OUTPUT_DIR + "/transducer.dot");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -397,8 +394,8 @@ public class ReachabilityChecking {
         T = trans;
     }
 
-    public void setLabelToIndex(Map<String, Integer> labelToIndex) {
-        this.labelToIndex = labelToIndex;
+    public void setIndexToLabel(Map<Integer, String> indexToLabel) {
+        this.indexToLabel = indexToLabel;
     }
 
     public void setOldCounterExamples(OldCounterExamples oldCounterExamples) {

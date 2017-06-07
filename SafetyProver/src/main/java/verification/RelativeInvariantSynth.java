@@ -1,5 +1,6 @@
 package verification;
 
+import common.Tuple;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import elimination.CEElimination;
@@ -7,7 +8,6 @@ import encoding.AutomataEncoding;
 import encoding.BoolValToAutomaton;
 import encoding.ISatSolver;
 import encoding.ISatSolverFactory;
-import common.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.sat4j.specs.ContradictionException;
@@ -109,8 +109,7 @@ public class RelativeInvariantSynth {
                 // S2
 
                 InductivenessChecking s2 =
-                        new InductivenessChecking(automaton, relevantStates,
-                                player1, numLetters);
+                        new InductivenessChecking(automaton, player1, numLetters);
                 Tuple<List<Integer>> xy = s2.check();
                 if (xy != null) {
                     LOGGER.debug("S2 failed for P1!");
@@ -120,8 +119,7 @@ public class RelativeInvariantSynth {
                     continue;
                 }
 
-                s2 = new InductivenessChecking(automaton, relevantStates,
-                        player2, numLetters);
+                s2 = new InductivenessChecking(automaton, player2, numLetters);
                 xy = s2.check();
                 if (xy != null) {
                     LOGGER.debug("S2 failed for P2!");

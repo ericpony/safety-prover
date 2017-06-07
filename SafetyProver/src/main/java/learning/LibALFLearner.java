@@ -80,6 +80,8 @@ public class LibALFLearner extends Learner {
                     knowledgebase.add_knowledge(query, answer);
                 }
             } else {
+                if (conjecture == null)
+                    throw new NoInvariantException();
                 CounterExample cex = new CounterExample();
                 Automata conj = AutomataUtility.Alf2SLRP(conjecture);
                 if (algorithmType == LibALFFactory.Algorithm.NL_STAR && !conjecture.isDFA()) {

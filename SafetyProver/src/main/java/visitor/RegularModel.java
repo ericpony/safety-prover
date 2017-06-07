@@ -3,10 +3,7 @@ package visitor;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class RegularModel {
     private Automata I;
@@ -36,6 +33,7 @@ public class RegularModel {
     private List<String> symmetries = new ArrayList<String>();
 
     private int explicitChecksUntilLength = -1;
+    private Map<Integer, String> indexToLabel;
 
     public Automata getI() {
         return I;
@@ -65,19 +63,18 @@ public class RegularModel {
         this.T = transition;
     }
 
-    public Map<String, Integer> getLabelToIndex() {
-        return labelToIndex;
-    }
-
     public void setLabelToIndex(Map<String, Integer> labelToIndex) {
-        this.labelToIndex = labelToIndex;
+        this.labelToIndex = Collections.unmodifiableMap(labelToIndex);
     }
 
     public Map<Integer, String> getIndexToLabel() {
-        Map<Integer, String> res = new HashMap<Integer, String>();
-        for (Map.Entry<String, Integer> entry : labelToIndex.entrySet())
-            res.put(entry.getValue(), entry.getKey());
-        return res;
+        if (indexToLabel == null) {
+            Map<Integer, String> map = new HashMap<Integer, String>();
+            for (Map.Entry<String, Integer> entry : labelToIndex.entrySet())
+                map.put(entry.getValue(), entry.getKey());
+            indexToLabel = Collections.unmodifiableMap(map);
+        }
+        return indexToLabel;
     }
 
     public int getNumberOfLetters() {

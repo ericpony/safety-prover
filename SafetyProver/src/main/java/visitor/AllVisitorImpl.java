@@ -15,13 +15,13 @@ import java.util.*;
 public class AllVisitorImpl implements AllVisitor<Object, RegularModel> {
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private Map<String, Integer> transducerStateToIndex = new HashMap<String, Integer>();
-    private Map<String, Integer> labelToIndex = new HashMap<String, Integer>();
+    private Map<String, Integer> transducerStateToIndex = new HashMap<>();
+    private Map<String, Integer> labelToIndex = new HashMap<>();
 
-    private Map<String, Integer> automataStateToIndex = new HashMap<String, Integer>();
+    private Map<String, Integer> automataStateToIndex = new HashMap<>();
 
     //transducer looping transition info temporary
-    private List<Integer> iStarStates = new ArrayList<Integer>();
+    private List<Integer> iStarStates = new ArrayList<>();
 
     public Object visit(Model p, RegularModel arg) {
 

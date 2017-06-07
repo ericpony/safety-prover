@@ -538,7 +538,7 @@ public class IncrementalVerifier {
         checking.setB(problem.getB());
         checking.setI(problem.getI());
         checking.setT(problem.getT());
-        checking.setLabelToIndex(problem.getLabelToIndex());
+        checking.setIndexToLabel(problem.getIndexToLabel());
         checking.setOldCounterExamples(oldCEs);
         checking.setTransducerNumStates(numStateTransducer);
 

@@ -503,39 +503,79 @@ public class VerificationUtility {
 
 
     public static List<List<Integer>> findSomeTrace(
-            List<Integer> target, Automata from,
-            EdgeWeightedDigraph function
-    ) {
+            Automata from,
+            List<Integer> to,
+            EdgeWeightedDigraph function) {
         final LinkedList<List<Integer>> trace = new LinkedList<>();
-        final Automata init = AutomataUtility.getWordAutomaton(from, target.size());
-        final boolean isFound = findSomeTraceHelper(init, function, target, trace);
+        final Set<List<Integer>> visited = new HashSet<>();
+        final Automata init = AutomataUtility.getWordAutomaton(from, to.size());
+        final boolean isFound = findTraceHelper(init, to, function, trace, visited);
         return isFound ? trace : null;
     }
 
-    private static boolean findSomeTraceHelper(
+    public static List<List<Integer>> findSomeTrace(
+            List<Integer> from,
+            Automata to,
+            EdgeWeightedDigraph function) {
+        final LinkedList<List<Integer>> trace = new LinkedList<>();
+        final Set<List<Integer>> visited = new HashSet<>();
+        final boolean isFound = findTraceHelper(from, to, function, trace, visited);
+        return isFound ? trace : null;
+    }
+
+    private static boolean findTraceHelper(
             Automata from,
+            List<Integer> to,
             EdgeWeightedDigraph function,
-            List<Integer> target,
-            LinkedList<List<Integer>> trace
-    ) {
-        trace.addFirst(target);
-        if (from.accepts(target)) {
+            LinkedList<List<Integer>> trace,
+            Set<List<Integer>> visited) {
+        if (visited.contains(to))
+            return false;
+        visited.add(to);
+        trace.addFirst(to);
+        if (from.accepts(to)) {
             return true;
         }
         final int numLetters = from.getNumLabels();
-        final List<List<Integer>> range = AutomataUtility.getWords(
-                getPreImage(target, function, numLetters), target.size());
-        for (List<Integer> word : range) {
+        final List<List<Integer>> domain = AutomataUtility.getWords(
+                getPreImage(to, function, numLetters), to.size());
+        for (List<Integer> word : domain) {
             if (trace.contains(word))
                 continue;
-            if (findSomeTraceHelper(from, function, word, trace))
+            if (findTraceHelper(from, word, function, trace, visited))
                 return true;
         }
         trace.removeFirst();
         return false;
     }
 
-    public static EdgeWeightedDigraph minimise(EdgeWeightedDigraph graph, int numLetters) {
+    private static boolean findTraceHelper(
+            List<Integer> from,
+            Automata to,
+            EdgeWeightedDigraph function,
+            LinkedList<List<Integer>> trace,
+            Set<List<Integer>> visited) {
+        if (visited.contains(from))
+            return false;
+        visited.add(from);
+        trace.addFirst(from);
+        if (to.accepts(from)) {
+            return true;
+        }
+        final int numLetters = to.getNumLabels();
+        final List<List<Integer>> range = AutomataUtility.getWords(
+                getImage(from, function, numLetters), from.size());
+        for (List<Integer> word : range) {
+            if (trace.contains(word))
+                continue;
+            if (findTraceHelper(word, to, function, trace, visited))
+                return true;
+        }
+        trace.removeFirst();
+        return false;
+    }
+
+    public static EdgeWeightedDigraph minimize(EdgeWeightedDigraph graph, int numLetters) {
         numLetters += 1;
         Automata aut = new Automata(graph.getSourceVertex(),
                 graph.getNumVertices(), numLetters * numLetters);

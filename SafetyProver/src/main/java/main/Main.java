@@ -1,6 +1,7 @@
 package main;
 
-import common.TimbukPrinter;
+import common.ModelGeneratorTORMC;
+import common.ModelGeneratorARMC;
 import common.Timer;
 import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
@@ -29,16 +30,18 @@ import java.util.Map;
 public class Main {
     private static final Logger LOGGER = LogManager.getLogger();
 
+    public enum Task {
+        CONVERT_FORMAT,
+        CHECK_SAFETY
+    }
+
     public enum Mode {
         HOMEBREW,
         LIBALF,
         FIXEDPOINT,
-        SAT_ENUMERATION
-    }
-
-    public enum Task {
+        SAT_ENUMERATION,
         CONVERT_FOR_ARTMC,
-        CHECK_SAFETY
+        CONVERT_FOR_TORMC
     }
 
     private static final ISatSolverFactory SOLVER_FACTORY =
@@ -47,7 +50,6 @@ public class Main {
     //LingelingSolver.FACTORY;          // Lingeling
 
     /// directory name of the output
-    final static String OUTPUT_DIR = "output";
     static int timeout = 0;
     static Mode mode = null;
     static Task task = null;
@@ -70,7 +72,25 @@ public class Main {
                             System.err.println("Conflicting option: " + arg);
                             return;
                         }
-                        task = Task.CONVERT_FOR_ARTMC;
+                        i++;
+                        if (args.length > i) {
+                            task = Task.CONVERT_FORMAT;
+                            switch (args[i]) {
+                                case "ARMC":
+                                    mode = Mode.CONVERT_FOR_ARTMC;
+                                    break;
+                                case "TORMC":
+                                    mode = Mode.CONVERT_FOR_TORMC;
+                                    break;
+                                default:
+                                    System.err.println("Invalid format for convertion: " + args[i]);
+                                    return;
+                            }
+                        }
+                        if (mode == null) {
+                            System.err.println("Missing argument for convertion (ARMC|TORMC).");
+                            return;
+                        }
                         break;
                     case "debug":
                         Configurator.setRootLevel(Level.DEBUG);
@@ -146,7 +166,9 @@ public class Main {
                 if (in.isFile()) {
                     modelFiles.add(in);
                 } else if (in.isDirectory()) {
-                    modelFiles.addAll(Arrays.asList(in.listFiles()));
+                    File[] files = in.listFiles();
+                    if (files != null)
+                        modelFiles.addAll(Arrays.asList(files));
                 } else {
                     System.err.println("Input file doesn't exit.");
                     return;
@@ -155,11 +177,11 @@ public class Main {
         }
 
         if (modelFiles.size() == 0) return;
-
         if (task == null) {
             task = Task.CHECK_SAFETY;
             if (mode == null) mode = Mode.HOMEBREW;
         }
+        Timer.setMilliTimeout(timeout * 1000);
 
         for (File modelFile : modelFiles) {
             if (!modelFile.isFile()) continue;
@@ -173,7 +195,6 @@ public class Main {
                             + mode + (libalfFlag != null ? "(" + libalfFlag + ")" : "")
                             + (timeout > 0 ? " with timeout " + timeout + " seconds" : "")
                             + "...");
-                    Timer.setMilliTimeout(timeout * 1000);
                     RegularModel model = parse(modelFile.getPath());
                     try {
                         long elapsedTime = checkModel(model, modelFileName, mode);
@@ -185,21 +206,41 @@ public class Main {
                         System.out.println(e.toString());
                     }
                     break;
-                case CONVERT_FOR_ARTMC:
-                    String modelName = modelFileName.split("\\.")[0];
-                    String outputFileName = modelName + ".ml";
-                    System.out.print("\nConverting from " + modelFileName + " to " + outputFileName + "...");
-                    try {
-                        Writer out = new BufferedWriter(new FileWriter(
-                                modelFile.getParent() + File.separatorChar + outputFileName
-                        ), 10000);
-                        TimbukPrinter printer =
-                                new TimbukPrinter(parse(modelFile.getPath()), modelName);
-                        printer.printTo(out);
-                        System.out.println("done.");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                case CONVERT_FORMAT:
+                    switch (mode) {
+                        case CONVERT_FOR_ARTMC:
+                            String modelName = modelFileName.split("\\.")[0];
+                            String outputFileName = modelName + ".ml";
+                            System.out.print("\nConverting from " + modelFileName + " to " + outputFileName + "...");
+                            try {
+                                Writer out = new BufferedWriter(new FileWriter(
+                                        modelFile.getParent() + File.separatorChar + outputFileName
+                                ), 10000);
+                                ModelGeneratorARMC printer =
+                                        new ModelGeneratorARMC(parse(modelFile.getPath()), modelName);
+                                printer.printTo(out);
+                                System.out.println("done.");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        case CONVERT_FOR_TORMC:
+                            modelName = modelFileName.split("\\.")[0];
+                            outputFileName = modelName + ".c";
+                            System.out.print("\nConverting from " + modelFileName + " to " + outputFileName + "...");
+                            try {
+                                Writer out = new BufferedWriter(new FileWriter(
+                                        modelFile.getParent() + File.separatorChar + outputFileName
+                                ), 10000);
+                                ModelGeneratorTORMC translator =
+                                        new ModelGeneratorTORMC(parse(modelFile.getPath()), modelName);
+                                translator.printTo(out);
+                                System.out.println("done.");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                    } // end of switch(mode)
                     break;
             }
         }

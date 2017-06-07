@@ -1,7 +1,9 @@
 package learning;
 
+import common.DOTPrinter;
 import common.Timer;
 import common.Tuple;
+import common.VerificationUtility;
 import common.bellmanford.EdgeWeightedDigraph;
 import common.finiteautomata.Automata;
 import common.finiteautomata.AutomataUtility;
@@ -12,30 +14,50 @@ import verification.InductivenessChecking;
 import verification.SubsetChecking;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class BasicRMCTeacher extends RMCTeacher {
 
     public static final Logger LOGGER = LogManager.getLogger();
-    protected Automata relevantStates;
     protected FiniteStateSets finiteStates;
+    private boolean tryMinimalInvariant = true;
 
     public BasicRMCTeacher(int numLetters, Automata I, Automata B, EdgeWeightedDigraph T) {
         super(numLetters, I, B, T);
-        relevantStates = AutomataUtility.getComplement(B);
         finiteStates = new FiniteStateSets(I, T, B);
+    }
+
+    private void debug(Supplier<String> msg) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(msg.get());
+        }
+    }
+
+    public void setLearnMinimalInvariant(boolean trymin) {
+        tryMinimalInvariant = trymin;
+    }
+
+    private boolean canReachBadStatesFrom(List<Integer> word) {
+        return VerificationUtility.
+                findSomeTrace(word, getBadStates(), getTransition()) != null;
     }
 
     public boolean isAccepted(List<Integer> word)
             throws Timer.TimeoutException {
         Timer.tick();
         boolean isReachable = finiteStates.isReachable(word);
-        boolean isBad = getBadStates().accepts(word);
-        String labeledWord = LOGGER.isDebugEnabled() ? NoInvariantException.getLabeledWord(word) : null;
+        boolean isBad = tryMinimalInvariant ?
+                getBadStates().accepts(word) : canReachBadStatesFrom(word);
+
+        String labeledWord = LOGGER.isDebugEnabled() ?
+                NoInvariantException.getLabeledWord(word) : null;
+
         if (isReachable && isBad) {
             LOGGER.debug("membership query: " + labeledWord);
             throw new NoInvariantException(word, getInitialStates(), getTransition());
         }
-        boolean accepted = isReachable && !isBad;
+
+        boolean accepted = tryMinimalInvariant ? isReachable : !isBad;
         LOGGER.debug("membership query: " + labeledWord + " -> " + (accepted ? "accepted" : "rejected"));
         Timer.tick();
         return accepted;
@@ -43,14 +65,16 @@ public class BasicRMCTeacher extends RMCTeacher {
 
     public boolean isCorrectLanguage(Automata hyp, CounterExample cex)
             throws Timer.TimeoutException {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("found hypothesis, size " + hyp.getStates().length);
+            LOGGER.debug(hyp.prettyPrint("candidate invariant:", NoInvariantException.getIndexToLabelMapping()));
+            LOGGER.debug(DOTPrinter.getString(hyp, NoInvariantException.getIndexToLabelMapping()));
+        }
         Timer.tick();
-        LOGGER.debug("found hypothesis, size " + hyp.getStates().length);
         List<Integer> ex;
-        SubsetChecking sc;
 
         // first test: are initial states contained?
-        sc = new SubsetChecking(getInitialStates(), hyp);
-        ex = sc.check();
+        ex = new SubsetChecking(getInitialStates(), hyp).check();
         Timer.tick();
         if (ex != null) {
             if (LOGGER.isDebugEnabled()) {
@@ -73,7 +97,6 @@ public class BasicRMCTeacher extends RMCTeacher {
             cex.addNegative(ex);
             return false;
         }
-
         /*
         // third test: are concrete unreachable configurations excluded?
         for (int l = 0; l <= explicitExplorationDepth; ++l) {
@@ -90,21 +113,24 @@ public class BasicRMCTeacher extends RMCTeacher {
         }
         */
         // fourth test: is the invariant inductive?
-        InductivenessChecking ic = new InductivenessChecking(hyp, relevantStates, getTransition(), getNumLetters());
+        InductivenessChecking ic = new InductivenessChecking(hyp, getTransition(), getNumLetters());
         Tuple<List<Integer>> xy = ic.check();
         Timer.tick();
         if (xy != null) {
+            String x = null, y = null;
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Hypothesis is not inductive: ");
-                String x = NoInvariantException.getLabeledWord(xy.x);
-                String y = NoInvariantException.getLabeledWord(xy.y);
+                x = NoInvariantException.getLabeledWord(xy.x);
+                y = NoInvariantException.getLabeledWord(xy.y);
                 LOGGER.debug(x + " => " + y);
             }
-            if (finiteStates.isReachable(xy.x)) {
-                LOGGER.debug("* The second configuration should be included in the hypothesis.");
+            boolean addPositive = tryMinimalInvariant ?
+                    finiteStates.isReachable(xy.x) : !canReachBadStatesFrom(xy.y);
+            if (addPositive) {
+                LOGGER.debug("* Configuration " + y + " should be included in the hypothesis.");
                 cex.addPositive(xy.y);
             } else {
-                LOGGER.debug("* The first configuration should be excluded from the hypothesis.");
+                LOGGER.debug("* Configuration " + x + " should be excluded from the hypothesis.");
                 cex.addNegative(xy.x);
             }
             return false;
