@@ -20,8 +20,7 @@ Transition {
 
     // a client in an idle state move to request
     s0 -> r1 i/i;
-    s0 -> r1 r/r;
-    s0 -> r1 r/r;
+    s0 -> r1 c/c;
 
     r1 -> r1 i/i;
     r1 -> r1 r/r;
@@ -33,7 +32,7 @@ Transition {
     r2 -> r2 r/r;
     r2 -> r2 c/c;
 
-    // allocator: i -> c and a client r/c
+    // allocator i -> c and a client r -> c
     s0 -> p1 i/c;
 
     p1 -> p1 i/i;
@@ -46,7 +45,7 @@ Transition {
     p2 -> p2 r/r;
     p2 -> p2 c/c;
 
-    // allocator: c -> i and a client c/i
+    // allocator c -> i and a client c -> i
     s0 -> q1 c/i;
 
     q1 -> q1 i/i;
@@ -65,11 +64,14 @@ Transition {
 Bad {
     init: s0;
 
-    // any i/r
-    s0 -> s0 i;
-    s0 -> s0 r;
+    // any i/c
+    s0 -> s1 i;
+    s0 -> s1 c;
 
     // more than one process in critical section
+
+    s1 -> s1 i;
+    s1 -> s1 r;
     s1 -> s2 c;
 
     s2 -> s2 i;
