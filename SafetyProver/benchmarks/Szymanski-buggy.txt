@@ -39,7 +39,6 @@ Transition {
     t1 -> t10 Q4/Q4;
     t1 -> t10 Q5/Q5;
     t1 -> t10 Q6/Q6;
-    t1 -> t10 Q7/Q7;
     t10 -> t11 S0/S0;
     t11 -> t1 W0/W0;
     t11 -> t1 W1/W1;
@@ -58,7 +57,6 @@ Transition {
     t14 -> t15 Q4/Q4;
     t14 -> t15 Q5/Q5;
     t14 -> t15 Q6/Q6;
-    t14 -> t15 Q7/Q7;
     t15 -> t16 S0/S0;
     t16 -> t14 W0/W0;
     t16 -> t14 W1/W1;
@@ -72,7 +70,6 @@ Transition {
     t2 -> t20 Q4/Q4;
     t2 -> t20 Q5/Q5;
     t2 -> t20 Q6/Q6;
-    t2 -> t20 Q7/Q7;
     t20 -> t21 S0/S0;
     t20 -> t21 S1/S1;
     t21 -> t2 W0/W0;
@@ -92,7 +89,6 @@ Transition {
     t24 -> t25 Q4/Q4;
     t24 -> t25 Q5/Q5;
     t24 -> t25 Q6/Q6;
-    t24 -> t25 Q7/Q7;
     t25 -> t26 S0/S0;
     t25 -> t26 S1/S1;
     t26 -> t24 W0/W0;
@@ -107,7 +103,6 @@ Transition {
     t3 -> t300 Q4/Q4;
     t3 -> t300 Q5/Q5;
     t3 -> t300 Q6/Q6;
-    t3 -> t300 Q7/Q7;
 
     t300 -> t310 S0/S0;
     t301 -> t311 S0/S0;
@@ -134,7 +129,6 @@ Transition {
     t34 -> t350 Q4/Q4;
     t34 -> t350 Q5/Q5;
     t34 -> t350 Q6/Q6;
-    t34 -> t350 Q7/Q7;
     t350 -> t360 S0/S0;
     t350 -> t360 S1/S1;
     t351 -> t361 S0/S0;
@@ -150,7 +144,6 @@ Transition {
     tl4 -> tl40 Q4/Q4;
     tl4 -> tl40 Q5/Q5;
     tl4 -> t20 Q6/Q6;
-    tl4 -> t20 Q7/Q7;
     tl40 -> tl41 S0/S0;
     tl40 -> tl41 S1/S1;
     tl41 -> tl4 W0/W0;
@@ -171,7 +164,6 @@ Transition {
     t4 -> t40 Q4/Q4;
     t4 -> t40 Q5/Q5;
     t4 -> t40 Q6/Q6;
-    t4 -> t40 Q7/Q7;
 
     t40 -> t41 S0/S0;
     t40 -> t41 S1/S1;
@@ -190,7 +182,6 @@ Transition {
     t44 -> t450 Q4/Q4;
     t44 -> t450 Q5/Q5;
     t44 -> t450 Q6/Q6;
-    t44 -> t450 Q7/Q7;
 
     t450 -> t460 S0/S0;
     t450 -> t460 S1/S1;
@@ -210,7 +201,6 @@ Transition {
     tl5 -> tl50 Q4/Q4;
     tl5 -> tl50 Q5/Q5;
     tl5 -> tl50 Q6/Q6;
-    tl5 -> tl50 Q7/Q7;
 
     tl50 -> tl510 S0/S0;
     tl50 -> tl511 S1/S1;
@@ -227,7 +217,6 @@ Transition {
     tl52 -> tl53 Q4/Q4;
     tl52 -> tl53 Q5/Q5;
     tl52 -> tl53 Q6/Q6;
-    tl52 -> tl53 Q7/Q7;
 
     tl53 -> tl54 S0/S0;
     tl53 -> tl54 S1/S1;
@@ -249,7 +238,6 @@ Transition {
     tr5 -> tr50 Q4/Q4;
     tr5 -> tr50 Q5/Q5;
     tr5 -> tr50 Q6/Q6;
-    tr5 -> tr50 Q7/Q7;
 
     tr50 -> tr51 S0/S0;
     tr50 -> tr51 S1/S1;
@@ -269,7 +257,6 @@ Transition {
     tr54 -> tr55 Q4/Q4;
     tr54 -> tr55 Q5/Q5;
     tr54 -> tr55 Q6/Q6;
-    tr54 -> tr55 Q7/Q7;
 
     tr55 -> tr560 S0/S0;
     tr55 -> tr561 S1/S1;
@@ -287,7 +274,6 @@ Transition {
     t6 -> t60 Q4/Q4;
     t6 -> t60 Q5/Q5;
     t6 -> t60 Q6/Q6;
-    t6 -> t60 Q7/Q7;
 
     t60 -> t61 S0/S0;
     t60 -> t61 S1/S1;
@@ -306,7 +292,6 @@ Transition {
     t64 -> t65 Q4/Q4;
     t64 -> t65 Q5/Q5;
     t64 -> t65 Q6/Q6;
-    t64 -> t65 Q7/Q7;
 
     t65 -> t66 S0/S0;
     t65 -> t66 S1/S1;
@@ -322,7 +307,6 @@ Transition {
     t7 -> t70 Q4/Q4;
     t7 -> t70 Q5/Q5;
     t7 -> t70 Q6/Q6;
-    t7 -> t70 Q7/Q7;
 
     t70 -> t71 S0/S0;
     t71 -> t7 W0/W0;
@@ -340,49 +324,13 @@ Transition {
     t74 -> t75 Q4/Q4;
     t74 -> t75 Q5/Q5;
     t74 -> t75 Q6/Q6;
-    t74 -> t75 Q7/Q7;
 
     t75 -> t76 S0/S0;
     t75 -> t76 S1/S1;
     t76 -> t74 W0/W0;
     t76 -> t74 W1/W1;
 
-    // t8
-    s0 -> t8;
-
-    t8 -> t80 Q1/Q1;
-    t8 -> t80 Q2/Q2;
-    t8 -> t80 Q3/Q3;
-    t8 -> t80 Q4/Q4;
-    t8 -> t80 Q5/Q5;
-    t8 -> t80 Q6/Q6;
-    t8 -> t80 Q7/Q7;
-
-    t80 -> t81 S0/S0;
-    t80 -> t81 S1/S1;
-    t81 -> t8 W0/W0;
-    t81 -> t8 W1/W1;
-
-    t8 -> t82 Q7/Q1;
-    t82 -> t83 S0/S0;
-    t82 -> t83 S1/S0;
-    t83 -> t84 W0/W0;
-    t83 -> t84 W1/W1;
-
-    t84 -> t85 Q1/Q1;
-    t84 -> t85 Q2/Q2;
-    t84 -> t85 Q3/Q3;
-    t84 -> t85 Q4/Q4;
-    t84 -> t85 Q5/Q5;
-    t84 -> t85 Q6/Q6;
-    t84 -> t85 Q7/Q7;
-
-    t85 -> t86 S0/S0;
-    t85 -> t86 S1/S1;
-    t86 -> t84 W0/W0;
-    t86 -> t84 W1/W1;
-
-    accepting: t14, t24, t34, t64, t74, t84;
+    accepting: t14, t24, t34, t64, t74;
 }
 
 Bad {
