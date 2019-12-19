@@ -1,0 +1,72 @@
+/**
+ * The finite automaton defining initial configurations.
+ *
+ * Here, letter "N" represents processes without token, and
+ * "T" processes with token. Initial configurations are words
+ * with at least one token.
+ */
+Initial {
+    init: s0;      // initial state of the automaton
+
+    s0 -> s0 N;    // transition labelled with letter "N"
+
+    s0 -> s1 T;
+
+    s1 -> s1 N;
+    s1 -> s1 T;
+
+    accepting: s1; // comma-separated list of accepting states
+}
+
+/**
+ * The following flag specifies that the set I0 of initial configurations
+ * has to be closed under Player 1 and Player 2 transitions. This is
+ * necessary when analysing liveness for randomised systems.
+ */
+closedUnderTransitions;
+
+/**
+ * The length-preserving transducer defining Player 2 transitions.
+ *
+ * Here, Player 2 has to implement the possible transitions of the
+ * process selected by the scheduler (Player 1).
+ */
+Transition {
+    init: s0;
+
+    s0 -> s0 N/N;
+    s0 -> s0 T/T;
+
+    s0 -> s1 T/T;          // (1) selected process keeps token
+    s0 -> s2 T/N;          // (2) selected process passes token to right
+
+    // Merge tokens
+    s2 -> s1 T/T;           // merge tokens
+    s2 -> s1 N/T;           // pass token to right from s2
+
+    s1 -> s1 N/N;
+    s1 -> s1 T/T;
+
+    accepting: s1;
+}
+
+Bad {
+    init: s0;
+    s0 -> s1 N;
+    s1 -> s1 N;
+    accepting: s1;
+}
+
+monolithicWitness;
+
+/**
+ * Lower/Upper bound (inclusive) on the number of states considered for the
+ * progress relations T
+ */
+transducerStateGuessing: 1 .. 10;
+
+/**
+ * Lower/Upper bound (inclusive) on the number of states considered for the regular sets A, B of
+ * configurations
+ */
+automatonStateGuessing: 0 .. 4;

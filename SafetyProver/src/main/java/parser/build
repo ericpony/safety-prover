@@ -1,0 +1,13 @@
+#!/bin/bash
+# Build BNFC
+
+./bnfc -java1.5 grammar.cf &&
+make &&
+(cat "modelinputsample.txt" | java -cp ./java-cup-11a.jar:. grammar/Test) &&
+rm -rf ../grammar/ &&
+mv grammar ../ &&
+echo "Build succeeded!" 1>&2 &&
+exit 0
+
+echo "Build failed!" 1>&2
+exit 1

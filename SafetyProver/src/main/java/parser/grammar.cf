@@ -1,0 +1,64 @@
+Model. ModelRule ::= "Initial" AutomatonRule
+                     MaybeClosed
+                     "Transition" TransducerRule
+                     "Bad" AutomatonRule
+                     [VerifierOption];
+
+--                     StateTransducerRule
+--                     StateAutomatonRule
+--                     InitStateAutomatonRule;
+
+--transducer
+Transducer. TransducerRule ::= "{"  InitRule [TransitionRule] AcceptingRule "}";
+TransducerInitialState. InitRule ::= "init" ":" Name ";";
+FulTransition. TransitionRule ::=  Name "->" Name Name "/" Name;
+EmptyTransition. TransitionRule ::= Name "->" Name;
+LoopingTransition. TransitionRule ::= "loop" ":" [Name];
+TransducerAccepting. AcceptingRule ::= "accepting" ":" [Name] ";";
+
+
+--Automaton
+Automaton. AutomatonRule ::=  "{" AutomataInitRule [AutomataTransitionRule] AutomataAcceptingsRule "}" ;
+AutomataInitialState. AutomataInitRule ::= "init" ":" Name ";";
+AutomataTransition. AutomataTransitionRule ::= Name "->" Name Name;
+AutomataEmptyTransition. AutomataTransitionRule ::= Name "->" Name;
+AutomataAcceptings. AutomataAcceptingsRule ::= "accepting" ":" [Name] ";";
+
+--Number of state guessing
+NumOfStatesTransducerGuess.    VerifierOption ::= "transducerStateGuessing" ":" MyInteger ".." MyInteger ;
+NumOfStatesAutomatonGuess.     VerifierOption ::= "automatonStateGuessing" ":" MyInteger ".." MyInteger ;
+NumOfInitStatesAutomatonGuess. VerifierOption ::= "initAutomatonStateGuessing" ":" MyInteger ".." MyInteger ;
+SymmetryOptions.               VerifierOption ::= "symmetries" ":" [SymmetryOption];
+ExplicitChecks.                VerifierOption ::= "explicitChecksUntilLength" ":" MyInteger;
+UseRankingFunctions.           VerifierOption ::= "useRankingFunctions";
+MonolithicWitness.             VerifierOption ::= "monolithicWitness";
+NoPrecomputedInv.              VerifierOption ::= "noPrecomputedInvariant";
+LogLevel.                      VerifierOption ::= "logLevel" ":" MyInteger;
+ParLevel.                      VerifierOption ::= "parallel" ":" MyInteger;
+
+terminator VerifierOption ";";
+
+RotationSymmetry.              SymmetryOption ::= "rotation";
+RotationWithSymmetry.          SymmetryOption ::= "rotationStartingWith"
+                                                  "{" [Name] "}";
+
+separator SymmetryOption ",";
+
+--initial states closed under transitions
+ClosedInit.     MaybeClosed ::= "closedUnderTransitions" ";" ;
+NotClosedInit.  MaybeClosed ::= ;
+
+
+NumberName. Name ::= MyInteger;
+LiteralName. Name ::= LabelIdent;
+
+token LabelIdent (letter | digit | '_')* (letter | '_') digit*;
+token MyInteger digit +;
+
+comment "/**" "**/" ;
+comment "/*" "*/" ;
+comment "//";
+
+separator 	TransitionRule ";";
+separator 	AutomataTransitionRule ";";
+separator 	Name ",";
